@@ -1,0 +1,246 @@
+package api
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+// ActionBackend abstracts actions requiring a live WhatsApp connection.
+// This is a local mirror of mcp.ActionBackend to avoid circular imports.
+type ActionBackend interface {
+	SendMessage(ctx context.Context, recipient, text string) error
+	SendFile(ctx context.Context, recipient, filePath string) error
+	SendAudioMessage(ctx context.Context, recipient, filePath string) error
+	DownloadMedia(ctx context.Context, messageID, chatJID string) (string, error)
+	RequestHistorySync(ctx context.Context) error
+}
+
+// APIServer exposes a REST API that proxies actions to an ActionBackend.
+// It is used in bridge mode so that a separate MCP client process can
+// send WhatsApp actions over HTTP.
+type APIServer struct {
+	backend ActionBackend
+	addr    string
+}
+
+// NewAPIServer creates a new APIServer bound to the given address.
+func NewAPIServer(backend ActionBackend, addr string) *APIServer {
+	return &APIServer{
+		backend: backend,
+		addr:    addr,
+	}
+}
+
+// Start registers routes and begins serving HTTP requests.
+// It blocks until the server shuts down or encounters a fatal error.
+func (s *APIServer) Start() error {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /health", s.handleHealth)
+	mux.HandleFunc("POST /api/send", s.handleSend)
+	mux.HandleFunc("POST /api/send-file", s.handleSendFile)
+	mux.HandleFunc("POST /api/send-audio", s.handleSendAudio)
+	mux.HandleFunc("POST /api/download", s.handleDownload)
+	mux.HandleFunc("POST /api/sync-history", s.handleSyncHistory)
+
+	return http.ListenAndServe(s.addr, mux)
+}
+
+// apiResponse is the standard JSON envelope for all API responses.
+type apiResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
+}
+
+// --- Handlers ---------------------------------------------------------------
+
+func (s *APIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Message: "ok",
+	})
+}
+
+func (s *APIServer) handleSend(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Recipient string `json:"recipient"`
+		Message   string `json:"message"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("invalid request: %v", err),
+		})
+		return
+	}
+
+	if req.Recipient == "" || req.Message == "" {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: "recipient and message are required",
+		})
+		return
+	}
+
+	if err := s.backend.SendMessage(r.Context(), req.Recipient, req.Message); err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("failed to send message: %v", err),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Message: "sent",
+	})
+}
+
+func (s *APIServer) handleSendFile(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Recipient string `json:"recipient"`
+		FilePath  string `json:"file_path"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("invalid request: %v", err),
+		})
+		return
+	}
+
+	if req.Recipient == "" || req.FilePath == "" {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: "recipient and file_path are required",
+		})
+		return
+	}
+
+	if err := s.backend.SendFile(r.Context(), req.Recipient, req.FilePath); err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("failed to send file: %v", err),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Message: "file sent",
+	})
+}
+
+func (s *APIServer) handleSendAudio(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Recipient string `json:"recipient"`
+		FilePath  string `json:"file_path"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("invalid request: %v", err),
+		})
+		return
+	}
+
+	if req.Recipient == "" || req.FilePath == "" {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: "recipient and file_path are required",
+		})
+		return
+	}
+
+	if err := s.backend.SendAudioMessage(r.Context(), req.Recipient, req.FilePath); err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("failed to send audio: %v", err),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Message: "audio sent",
+	})
+}
+
+func (s *APIServer) handleDownload(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		MessageID string `json:"message_id"`
+		ChatJID   string `json:"chat_jid"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("invalid request: %v", err),
+		})
+		return
+	}
+
+	if req.MessageID == "" || req.ChatJID == "" {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: "message_id and chat_jid are required",
+		})
+		return
+	}
+
+	path, err := s.backend.DownloadMedia(r.Context(), req.MessageID, req.ChatJID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("failed to download media: %v", err),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Data:    map[string]string{"path": path},
+	})
+}
+
+func (s *APIServer) handleSyncHistory(w http.ResponseWriter, r *http.Request) {
+	if err := s.backend.RequestHistorySync(r.Context()); err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("failed to request history sync: %v", err),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Message: "history sync requested",
+	})
+}
+
+// --- Helpers ----------------------------------------------------------------
+
+// readJSON decodes the request body as JSON into v.
+func readJSON(r *http.Request, v any) error {
+	if r.Body == nil {
+		return fmt.Errorf("empty request body")
+	}
+	defer r.Body.Close()
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(v); err != nil {
+		return fmt.Errorf("json decode: %w", err)
+	}
+	return nil
+}
+
+// writeJSON encodes v as JSON and writes it to the response with the given
+// HTTP status code and Content-Type application/json.
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(v)
+}
