@@ -3,14 +3,14 @@ package store
 import "time"
 
 type Chat struct {
-	JID             string    `gorm:"primaryKey" json:"jid"`
+	JID             string    `gorm:"column:jid;primaryKey" json:"jid"`
 	Name            *string   `json:"name,omitempty"`
 	LastMessageTime time.Time `gorm:"index" json:"last_message_time"`
 }
 
 type Contact struct {
-	JID       string    `gorm:"primaryKey" json:"jid"`
-	PhoneJID  *string   `gorm:"index" json:"phone_jid,omitempty"`
+	JID       string    `gorm:"column:jid;primaryKey" json:"jid"`
+	PhoneJID  *string   `gorm:"column:phone_jid;index" json:"phone_jid,omitempty"`
 	PushName  *string   `json:"push_name,omitempty"`
 	FullName  *string   `json:"full_name,omitempty"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -18,7 +18,7 @@ type Contact struct {
 
 type Message struct {
 	ID            string    `gorm:"primaryKey" json:"id"`
-	ChatJID       string    `gorm:"primaryKey;index" json:"chat_jid"`
+	ChatJID       string    `gorm:"column:chat_jid;primaryKey;index" json:"chat_jid"`
 	Sender        string    `gorm:"not null;index" json:"sender"`
 	Content       string    `json:"content"`
 	Timestamp     time.Time `gorm:"not null;index" json:"timestamp"`
@@ -28,8 +28,8 @@ type Message struct {
 	Filename      *string   `json:"filename,omitempty"`
 	URL           *string   `json:"url,omitempty"`
 	MediaKey      []byte    `json:"-"`
-	FileSHA256    []byte    `json:"-"`
-	FileEncSHA256 []byte    `json:"-"`
+	FileSHA256    []byte    `gorm:"column:file_sha256" json:"-"`
+	FileEncSHA256 []byte    `gorm:"column:file_enc_sha256" json:"-"`
 	FileLength    *int64    `json:"file_length,omitempty"`
-	MentionedJIDs *string   `json:"mentioned_jids,omitempty"`
+	MentionedJIDs *string   `gorm:"column:mentioned_jids" json:"mentioned_jids,omitempty"`
 }
