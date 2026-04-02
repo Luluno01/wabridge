@@ -2,6 +2,7 @@ package whatsapp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -536,7 +537,8 @@ func extractMentionedJIDs(msg *waE2E.Message) string {
 		return ""
 	}
 
-	return strings.Join(jids, ",")
+	data, _ := json.Marshal(jids)
+	return string(data)
 }
 
 // strPtr returns a pointer to the given string. Convenience helper to avoid
