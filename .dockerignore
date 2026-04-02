@@ -1,3 +1,25 @@
+# Git
 .git
-docs
+
+# Docs (not needed in image)
+docs/
 *.md
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Databases and media (runtime data, not build artifacts)
+*.db
+*.db-wal
+*.db-shm
+media/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# MCP config
+.mcp.json

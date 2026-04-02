@@ -1,0 +1,18 @@
+# Binary
+wabridge
+
+# Databases
+*.db
+*.db-wal
+*.db-shm
+
+# Downloaded media
+media/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# MCP config (contains local paths)
+.mcp.json
