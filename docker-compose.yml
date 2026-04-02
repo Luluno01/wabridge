@@ -1,0 +1,37 @@
+services:
+  bridge:
+    build: .
+    command: ["bridge", "--db", "/app/store/messages.db", "--session-db", "/app/store/whatsapp.db", "--media-dir", "/app/store/media"]
+    restart: unless-stopped
+    volumes:
+      - store:/app/store
+    networks:
+      - wabridge-net
+
+  mcp:
+    build: .
+    command: ["mcp", "--db", "/app/store/messages.db", "--bridge-url", "http://bridge:8080"]
+    stdin_open: true
+    volumes:
+      - store:/app/store
+    networks:
+      - wabridge-net
+    depends_on:
+      - bridge
+    profiles:
+      - mcp
+
+  standalone:
+    build: .
+    command: ["standalone", "--db", "/app/store/messages.db", "--session-db", "/app/store/whatsapp.db", "--media-dir", "/app/store/media"]
+    stdin_open: true
+    volumes:
+      - store:/app/store
+    profiles:
+      - standalone
+
+volumes:
+  store:
+
+networks:
+  wabridge-net:
