@@ -25,6 +25,7 @@ type Client struct {
 	mu            sync.Mutex
 	syncSettled   chan struct{}
 	lastSyncEvent int64
+	syncStarted   bool
 }
 
 // NewClient creates a new WhatsApp client backed by the given session database
