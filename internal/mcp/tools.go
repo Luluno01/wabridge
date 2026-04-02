@@ -177,6 +177,7 @@ func (s *Server) registerListMessages() {
 		mcplib.WithNumber("limit", mcplib.Description("Maximum number of results (default 50)")),
 		mcplib.WithNumber("page", mcplib.Description("Page number for pagination")),
 		mcplib.WithBoolean("raw", mcplib.Description("If true, skip mention resolution")),
+		mcplib.WithBoolean("latest", mcplib.Description("If true, return most recent messages first (default false)")),
 	)
 	s.mcp.AddTool(tool, func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 		opts := store.ListMessagesOpts{
@@ -185,6 +186,7 @@ func (s *Server) registerListMessages() {
 			Search:  req.GetString("search", ""),
 			Limit:   req.GetInt("limit", 50),
 			Page:    req.GetInt("page", 0),
+			Latest:  req.GetBool("latest", false),
 		}
 
 		if afterStr := req.GetString("after", ""); afterStr != "" {

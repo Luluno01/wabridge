@@ -16,6 +16,7 @@ type ListMessagesOpts struct {
 	Search  string
 	Limit   int
 	Page    int
+	Latest  bool // if true, return most recent messages first
 }
 
 type MessageResult struct {
@@ -88,7 +89,11 @@ func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 		query = query.Where("messages.content LIKE ?", like)
 	}
 
-	query = query.Order("messages.timestamp ASC")
+	if opts.Latest {
+		query = query.Order("messages.timestamp DESC")
+	} else {
+		query = query.Order("messages.timestamp ASC")
+	}
 
 	limit := opts.Limit
 	if limit <= 0 {
