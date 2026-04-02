@@ -282,5 +282,5 @@ wabridge/
 - `go.mau.fi/whatsmeow` — WhatsApp protocol
 - `gorm.io/gorm` + `gorm.io/driver/sqlite` — ORM
 - `github.com/spf13/cobra` — CLI
-- `github.com/modelcontextprotocol/go-sdk` — official Go MCP SDK (stdio transport)
+- `github.com/mark3labs/mcp-go` — Go MCP SDK (stdio transport, battle-tested)
 - `github.com/mdp/qrterminal` — QR code display
