@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -58,10 +59,12 @@ func (b *DirectBackend) SendMessage(ctx context.Context, recipient, text string)
 		Conversation: proto.String(text),
 	}
 
-	_, err = b.Client.WAClient.SendMessage(ctx, jid, msg)
+	resp, err := b.Client.WAClient.SendMessage(ctx, jid, msg)
 	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
+
+	b.storeOutgoingMessage(string(resp.ID), jid.String(), text, nil, nil)
 	return nil
 }
 
@@ -92,10 +95,14 @@ func (b *DirectBackend) SendFile(ctx context.Context, recipient, filePath string
 
 	msg := buildMediaMessage(mediaType, mimeType, filePath, &resp, uint64(len(data)))
 
-	_, err = b.Client.WAClient.SendMessage(ctx, jid, msg)
+	sendResp, err := b.Client.WAClient.SendMessage(ctx, jid, msg)
 	if err != nil {
 		return fmt.Errorf("failed to send media message: %w", err)
 	}
+
+	mtStr := mediaTypeString(mediaType)
+	filename := filepath.Base(filePath)
+	b.storeOutgoingMessage(string(sendResp.ID), jid.String(), "", &mtStr, &filename)
 	return nil
 }
 
@@ -140,10 +147,14 @@ func (b *DirectBackend) SendAudioMessage(ctx context.Context, recipient, filePat
 		},
 	}
 
-	_, err = b.Client.WAClient.SendMessage(ctx, jid, msg)
+	sendResp, err := b.Client.WAClient.SendMessage(ctx, jid, msg)
 	if err != nil {
 		return fmt.Errorf("failed to send audio message: %w", err)
 	}
+
+	mtStr := "audio"
+	filename := filepath.Base(filePath)
+	b.storeOutgoingMessage(string(sendResp.ID), jid.String(), "", &mtStr, &filename)
 	return nil
 }
 
@@ -306,5 +317,36 @@ func buildMediaMessage(mediaType whatsmeow.MediaType, mimeType, filePath string,
 				FileLength:    &resp.FileLength,
 			},
 		}
+	}
+}
+
+func (b *DirectBackend) storeOutgoingMessage(id, chatJID, content string, mediaType, filename *string) {
+	ownJID := ""
+	if b.Client.WAClient.Store.ID != nil {
+		ownJID = b.Client.WAClient.Store.ID.ToNonAD().String()
+	}
+
+	b.Store.StoreMessage(&store.Message{
+		ID:        id,
+		ChatJID:   chatJID,
+		Sender:    ownJID,
+		Content:   content,
+		Timestamp: time.Now(),
+		IsFromMe:  true,
+		MediaType: mediaType,
+		Filename:  filename,
+	})
+}
+
+func mediaTypeString(mt whatsmeow.MediaType) string {
+	switch mt {
+	case whatsmeow.MediaImage:
+		return "image"
+	case whatsmeow.MediaVideo:
+		return "video"
+	case whatsmeow.MediaAudio:
+		return "audio"
+	default:
+		return "document"
 	}
 }
