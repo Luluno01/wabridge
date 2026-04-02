@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -163,4 +164,106 @@ func TestGetContactName(t *testing.T) {
 
 	name = s.GetContactName("unknown@s.whatsapp.net")
 	assert.Equal(t, "", name)
+}
+
+func TestStoreMessage(t *testing.T) {
+	s := newTestStore(t)
+
+	msg := &Message{
+		ID:        "msg1",
+		ChatJID:   "chat@g.us",
+		Sender:    "123@s.whatsapp.net",
+		Content:   "Hello world",
+		Timestamp: time.Now().Truncate(time.Second),
+		IsFromMe:  false,
+	}
+
+	err := s.StoreMessage(msg)
+	require.NoError(t, err)
+
+	msg.Content = "Updated content"
+	err = s.StoreMessage(msg)
+	require.NoError(t, err)
+
+	got, err := s.GetMessage("msg1", "chat@g.us")
+	require.NoError(t, err)
+	assert.Equal(t, "Updated content", got.Content)
+}
+
+func TestStoreMessage_CreatesChat(t *testing.T) {
+	s := newTestStore(t)
+
+	msg := &Message{
+		ID:        "msg1",
+		ChatJID:   "new-chat@g.us",
+		Sender:    "123@s.whatsapp.net",
+		Content:   "First message",
+		Timestamp: time.Now(),
+		IsFromMe:  false,
+	}
+
+	err := s.StoreMessage(msg)
+	require.NoError(t, err)
+
+	chat, err := s.GetChat("new-chat@g.us")
+	require.NoError(t, err)
+	assert.Equal(t, "new-chat@g.us", chat.JID)
+}
+
+func TestListMessages(t *testing.T) {
+	s := newTestStore(t)
+	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+
+	s.UpsertContact(&Contact{JID: "alice@s.whatsapp.net", FullName: strPtr("Alice Smith")})
+	s.UpsertChat("chat@g.us", strPtr("Test Group"), base.Add(2*time.Minute))
+
+	for i := 0; i < 5; i++ {
+		s.StoreMessage(&Message{
+			ID:        fmt.Sprintf("msg%d", i),
+			ChatJID:   "chat@g.us",
+			Sender:    "alice@s.whatsapp.net",
+			Content:   fmt.Sprintf("Message %d", i),
+			Timestamp: base.Add(time.Duration(i) * time.Minute),
+		})
+	}
+
+	results, err := s.ListMessages(ListMessagesOpts{ChatJID: "chat@g.us", Limit: 10})
+	require.NoError(t, err)
+	assert.Len(t, results, 5)
+	assert.Equal(t, "Alice Smith", results[0].SenderName)
+	assert.Equal(t, "Test Group", results[0].ChatName)
+
+	after := base.Add(2 * time.Minute)
+	results, err = s.ListMessages(ListMessagesOpts{ChatJID: "chat@g.us", After: &after, Limit: 10})
+	require.NoError(t, err)
+	assert.Len(t, results, 3)
+
+	results, err = s.ListMessages(ListMessagesOpts{ChatJID: "chat@g.us", Search: "Message 3", Limit: 10})
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
+
+	results, err = s.ListMessages(ListMessagesOpts{ChatJID: "chat@g.us", Limit: 2, Page: 2})
+	require.NoError(t, err)
+	assert.Len(t, results, 2)
+}
+
+func TestGetMessageContext(t *testing.T) {
+	s := newTestStore(t)
+	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+
+	for i := 0; i < 10; i++ {
+		s.StoreMessage(&Message{
+			ID:        fmt.Sprintf("msg%d", i),
+			ChatJID:   "chat@g.us",
+			Sender:    "alice@s.whatsapp.net",
+			Content:   fmt.Sprintf("Message %d", i),
+			Timestamp: base.Add(time.Duration(i) * time.Minute),
+		})
+	}
+
+	results, err := s.GetMessageContext("msg5", "chat@g.us", 2, 2)
+	require.NoError(t, err)
+	assert.Len(t, results, 5) // msg3, msg4, msg5, msg6, msg7
+	assert.Equal(t, "Message 3", results[0].Content)
+	assert.Equal(t, "Message 7", results[4].Content)
 }
