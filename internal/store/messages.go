@@ -26,15 +26,19 @@ type MessageResult struct {
 
 func (s *Store) StoreMessage(msg *Message) error {
 	// Auto-create chat entry
-	s.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&Chat{
+	if err := s.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&Chat{
 		JID:             msg.ChatJID,
 		LastMessageTime: msg.Timestamp,
-	})
+	}).Error; err != nil {
+		return fmt.Errorf("failed to upsert chat: %w", err)
+	}
 
 	// Update chat's last message time if this message is newer
-	s.db.Model(&Chat{}).
+	if err := s.db.Model(&Chat{}).
 		Where("jid = ? AND last_message_time < ?", msg.ChatJID, msg.Timestamp).
-		Update("last_message_time", msg.Timestamp)
+		Update("last_message_time", msg.Timestamp).Error; err != nil {
+		return fmt.Errorf("failed to update chat time: %w", err)
+	}
 
 	return s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}, {Name: "chat_jid"}},
@@ -121,7 +125,9 @@ func (s *Store) GetMessageContext(id, chatJID string, beforeCount, afterCount in
 		Where("messages.chat_jid = ? AND messages.timestamp <= ?", chatJID, target.Timestamp).
 		Order("messages.timestamp DESC").
 		Limit(beforeCount + 1)
-	baseJoins(q).Scan(&before)
+	if err := baseJoins(q).Scan(&before).Error; err != nil {
+		return nil, fmt.Errorf("failed to query before context: %w", err)
+	}
 
 	for i, j := 0, len(before)-1; i < j; i, j = i+1, j-1 {
 		before[i], before[j] = before[j], before[i]
@@ -133,7 +139,9 @@ func (s *Store) GetMessageContext(id, chatJID string, beforeCount, afterCount in
 		Where("messages.chat_jid = ? AND messages.timestamp > ?", chatJID, target.Timestamp).
 		Order("messages.timestamp ASC").
 		Limit(afterCount)
-	baseJoins(q).Scan(&after)
+	if err := baseJoins(q).Scan(&after).Error; err != nil {
+		return nil, fmt.Errorf("failed to query after context: %w", err)
+	}
 
 	return append(before, after...), nil
 }
