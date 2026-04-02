@@ -72,3 +72,95 @@ func TestGetChat_NotFound(t *testing.T) {
 	_, err := s.GetChat("nonexistent@g.us")
 	assert.Error(t, err)
 }
+
+func TestUpsertContact_Insert(t *testing.T) {
+	s := newTestStore(t)
+
+	err := s.UpsertContact(&Contact{
+		JID:      "123@s.whatsapp.net",
+		PushName: strPtr("Alice"),
+		FullName: strPtr("Alice Smith"),
+	})
+	require.NoError(t, err)
+
+	c, err := s.GetContact("123@s.whatsapp.net")
+	require.NoError(t, err)
+	assert.Equal(t, "Alice", *c.PushName)
+	assert.Equal(t, "Alice Smith", *c.FullName)
+}
+
+func TestUpsertContact_OnlyUpdatesNonEmpty(t *testing.T) {
+	s := newTestStore(t)
+
+	s.UpsertContact(&Contact{
+		JID:      "123@s.whatsapp.net",
+		FullName: strPtr("Alice Smith"),
+	})
+
+	s.UpsertContact(&Contact{
+		JID:      "123@s.whatsapp.net",
+		PushName: strPtr("Ali"),
+	})
+
+	c, err := s.GetContact("123@s.whatsapp.net")
+	require.NoError(t, err)
+	assert.Equal(t, "Alice Smith", *c.FullName)
+	assert.Equal(t, "Ali", *c.PushName)
+}
+
+func TestUpsertContact_DualEntry(t *testing.T) {
+	s := newTestStore(t)
+
+	s.UpsertContact(&Contact{
+		JID:      "123@s.whatsapp.net",
+		PushName: strPtr("Alice"),
+		FullName: strPtr("Alice Smith"),
+	})
+
+	s.UpsertContact(&Contact{
+		JID:      "456@lid",
+		PhoneJID: strPtr("123@s.whatsapp.net"),
+		PushName: strPtr("Alice"),
+	})
+
+	c, err := s.GetContact("456@lid")
+	require.NoError(t, err)
+	assert.Equal(t, "Alice", *c.PushName)
+	assert.Equal(t, "123@s.whatsapp.net", *c.PhoneJID)
+}
+
+func TestSearchContacts(t *testing.T) {
+	s := newTestStore(t)
+
+	s.UpsertContact(&Contact{JID: "1@s.whatsapp.net", FullName: strPtr("Alice Smith")})
+	s.UpsertContact(&Contact{JID: "2@s.whatsapp.net", FullName: strPtr("Bob Jones")})
+	s.UpsertContact(&Contact{JID: "3@s.whatsapp.net", PushName: strPtr("Alice W")})
+
+	results, err := s.SearchContacts("alice", 50)
+	require.NoError(t, err)
+	assert.Len(t, results, 2)
+}
+
+func TestGetContactName(t *testing.T) {
+	s := newTestStore(t)
+
+	s.UpsertContact(&Contact{
+		JID:      "123@s.whatsapp.net",
+		PushName: strPtr("Ali"),
+		FullName: strPtr("Alice Smith"),
+	})
+
+	name := s.GetContactName("123@s.whatsapp.net")
+	assert.Equal(t, "Alice Smith", name)
+
+	s.UpsertContact(&Contact{
+		JID:      "456@s.whatsapp.net",
+		PushName: strPtr("Bob"),
+	})
+
+	name = s.GetContactName("456@s.whatsapp.net")
+	assert.Equal(t, "Bob", name)
+
+	name = s.GetContactName("unknown@s.whatsapp.net")
+	assert.Equal(t, "", name)
+}
