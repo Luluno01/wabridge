@@ -1,51 +1,44 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"wabridge/internal/action"
 )
 
-// ActionBackend abstracts actions requiring a live WhatsApp connection.
-// This is a local mirror of mcp.ActionBackend to avoid circular imports.
-type ActionBackend interface {
-	SendMessage(ctx context.Context, recipient, text string) error
-	SendFile(ctx context.Context, recipient, filePath string) error
-	SendAudioMessage(ctx context.Context, recipient, filePath string) error
-	DownloadMedia(ctx context.Context, messageID, chatJID string) (string, error)
-	RequestHistorySync(ctx context.Context) error
-}
-
-// APIServer exposes a REST API that proxies actions to an ActionBackend.
+// APIServer exposes a REST API that proxies actions to an action.Backend.
 // It is used in bridge mode so that a separate MCP client process can
 // send WhatsApp actions over HTTP.
 type APIServer struct {
-	backend ActionBackend
+	backend action.Backend
 	addr    string
 }
 
 // NewAPIServer creates a new APIServer bound to the given address.
-func NewAPIServer(backend ActionBackend, addr string) *APIServer {
+func NewAPIServer(backend action.Backend, addr string) *APIServer {
 	return &APIServer{
 		backend: backend,
 		addr:    addr,
 	}
 }
 
-// Start registers routes and begins serving HTTP requests.
-// It blocks until the server shuts down or encounters a fatal error.
-func (s *APIServer) Start() error {
+// Handler returns the HTTP handler with all routes registered.
+func (s *APIServer) Handler() http.Handler {
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("GET /health", s.handleHealth)
 	mux.HandleFunc("POST /api/send", s.handleSend)
 	mux.HandleFunc("POST /api/send-file", s.handleSendFile)
 	mux.HandleFunc("POST /api/send-audio", s.handleSendAudio)
 	mux.HandleFunc("POST /api/download", s.handleDownload)
 	mux.HandleFunc("POST /api/sync-history", s.handleSyncHistory)
+	return mux
+}
 
-	return http.ListenAndServe(s.addr, mux)
+// Start begins serving HTTP requests. Blocks until shutdown or fatal error.
+func (s *APIServer) Start() error {
+	return http.ListenAndServe(s.addr, s.Handler())
 }
 
 // apiResponse is the standard JSON envelope for all API responses.

@@ -193,10 +193,3 @@ func TestExtractDirectPathFromURL(t *testing.T) {
 	}
 }
 
-func TestFindBytes(t *testing.T) {
-	assert.Equal(t, 0, findBytes([]byte("hello"), []byte("hello")))
-	assert.Equal(t, 5, findBytes([]byte("xxxxxOpusHead"), []byte("OpusHead")))
-	assert.Equal(t, -1, findBytes([]byte("hello"), []byte("xyz")))
-	assert.Equal(t, -1, findBytes([]byte("hi"), []byte("hello")))
-	assert.Equal(t, -1, findBytes(nil, []byte("x")))
-}

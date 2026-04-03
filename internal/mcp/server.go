@@ -1,21 +1,22 @@
 package mcp
 
 import (
+	"wabridge/internal/action"
 	appstore "wabridge/internal/store"
 
 	mcpserver "github.com/mark3labs/mcp-go/server"
 )
 
 // Server wraps an MCP stdio server with access to the application store
-// (for query tools) and an ActionBackend (for mutation tools).
+// (for query tools) and an action.Backend (for mutation tools).
 type Server struct {
 	mcp     *mcpserver.MCPServer
 	store   *appstore.Store
-	backend ActionBackend
+	backend action.Backend
 }
 
 // NewServer creates a new MCP server with all tools registered.
-func NewServer(store *appstore.Store, backend ActionBackend) *Server {
+func NewServer(store *appstore.Store, backend action.Backend) *Server {
 	s := &Server{
 		mcp:     mcpserver.NewMCPServer("wabridge", "1.0.0"),
 		store:   store,

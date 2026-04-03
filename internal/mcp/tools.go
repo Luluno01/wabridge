@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"wabridge/internal/mention"
@@ -129,19 +128,15 @@ func (s *Server) registerGetDirectChatByContact() {
 			return nil, err
 		}
 
-		// List all chats, then filter to direct chats matching the phone
-		chats, err := s.store.ListChats("", 0)
+		chat, err := s.store.GetDirectChatByPhone(phone)
 		if err != nil {
-			return nil, fmt.Errorf("list chats: %w", err)
+			return nil, fmt.Errorf("get direct chat: %w", err)
+		}
+		if chat == nil {
+			return mcplib.NewToolResultText("no direct chat found for phone: " + phone), nil
 		}
 
-		for _, chat := range chats {
-			if strings.HasSuffix(chat.JID, "@s.whatsapp.net") && strings.Contains(chat.JID, phone) {
-				return jsonResult(chat)
-			}
-		}
-
-		return mcplib.NewToolResultText("no direct chat found for phone: " + phone), nil
+		return jsonResult(chat)
 	})
 }
 
@@ -228,11 +223,10 @@ func (s *Server) registerGetLastInteraction() {
 			return nil, err
 		}
 
-		// ListMessages orders by timestamp ASC, so we fetch a batch and
-		// take the last element to get the most recent message.
 		messages, err := s.store.ListMessages(store.ListMessagesOpts{
 			Sender: jid,
-			Limit:  50,
+			Limit:  1,
+			Latest: true,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("get last interaction: %w", err)
@@ -241,11 +235,10 @@ func (s *Server) registerGetLastInteraction() {
 			return mcplib.NewToolResultText("no messages found for: " + jid), nil
 		}
 
-		last := messages[len(messages)-1:]
 		raw := req.GetBool("raw", false)
-		s.resolveMessages(last, raw)
+		s.resolveMessages(messages, raw)
 
-		return jsonResult(last[0])
+		return jsonResult(messages[0])
 	})
 }
 

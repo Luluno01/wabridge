@@ -42,7 +42,6 @@ func (c *Client) handleMessage(msg *events.Message) {
 	chatJID := msg.Info.Chat.String()
 	sender := msg.Info.Sender.ToNonAD().String()
 
-	// Store sender's push name in contacts table
 	if msg.Info.PushName != "" && !msg.Info.IsFromMe {
 		if err := c.Store.UpsertContact(&appstore.Contact{
 			JID:      msg.Info.Sender.String(),
@@ -52,15 +51,11 @@ func (c *Client) handleMessage(msg *events.Message) {
 		}
 	}
 
-	// Resolve chat name (groups get looked up, individuals use raw JID)
 	name := c.resolveChatName(msg.Info.Chat, chatJID)
-
-	// Update chat
 	if err := c.Store.UpsertChat(chatJID, name, msg.Info.Timestamp); err != nil {
 		c.Log.Warnf("Failed to store chat: %v", err)
 	}
 
-	// Build and store the message
 	storeMsg := c.buildMessage(msg.Info.ID, chatJID, sender, msg.Message, msg.Info.Timestamp, msg.Info.IsFromMe)
 	if storeMsg == nil {
 		return
@@ -71,7 +66,6 @@ func (c *Client) handleMessage(msg *events.Message) {
 		return
 	}
 
-	// Log the message
 	direction := "<-"
 	if msg.Info.IsFromMe {
 		direction = "->"
@@ -106,7 +100,6 @@ func (c *Client) handleHistorySync(historySync *events.HistorySync) {
 			continue
 		}
 
-		// Resolve chat name from conversation metadata or group info
 		name := c.resolveHistoryChatName(jid, chatJID, conversation.GetDisplayName(), conversation.GetName())
 
 		messages := conversation.GetMessages()
@@ -118,7 +111,6 @@ func (c *Client) handleHistorySync(historySync *events.HistorySync) {
 			continue
 		}
 
-		// Find latest message timestamp for the chat
 		var latestTS time.Time
 		for _, msg := range messages {
 			if msg == nil || msg.GetMessage() == nil {
@@ -142,14 +134,12 @@ func (c *Client) handleHistorySync(historySync *events.HistorySync) {
 				continue
 			}
 
-			// ParseWebMessage resolves sender JIDs correctly, including in groups
 			evt, err := c.WAClient.ParseWebMessage(jid, msg.GetMessage())
 			if err != nil {
 				c.Log.Warnf("Failed to parse history message: %v", err)
 				continue
 			}
 
-			// Store sender push name from history
 			if evt.Info.PushName != "" && !evt.Info.IsFromMe {
 				if err := c.Store.UpsertContact(&appstore.Contact{
 					JID:      evt.Info.Sender.String(),
@@ -204,11 +194,7 @@ func (c *Client) waitForSyncSettled() {
 	c.Log.Infof("History sync settled, dumping contacts")
 	c.dumpContacts()
 
-	// Signal settlement (non-blocking in case nobody is listening)
-	select {
-	case c.syncSettled <- struct{}{}:
-	default:
-	}
+	close(c.syncSettled)
 }
 
 // handlePushName stores an updated push name for a contact.
@@ -322,32 +308,32 @@ func (c *Client) SyncSettled() <-chan struct{} {
 }
 
 // resolveChatName determines the appropriate name for a chat.
-// For group chats, it checks the cached name first, then queries GetGroupInfo.
-// For individual chats, the raw JID is returned (display names are resolved
-// at query time from the contacts table).
+// For individual chats, returns nil (display names are resolved at query time).
+// For groups, checks the DB cache, then queries WhatsApp.
 func (c *Client) resolveChatName(jid types.JID, chatJID string) *string {
 	if jid.Server != "g.us" {
-		return nil // Individual chats don't cache names
+		return nil
 	}
 
-	return c.updateGroupName(jid, chatJID)
+	existing, err := c.Store.GetChat(chatJID)
+	if err == nil && existing.Name != nil && *existing.Name != "" && !strings.HasPrefix(*existing.Name, "Group ") {
+		return existing.Name
+	}
+	return c.fetchGroupName(jid)
 }
 
 // resolveHistoryChatName resolves the name for a chat from history sync data.
-// It prefers the conversation's DisplayName/Name fields; if those are empty
-// and the chat is a group, it falls back to GetGroupInfo.
+// Prefers conversation metadata; falls back to GetGroupInfo for groups.
 func (c *Client) resolveHistoryChatName(jid types.JID, chatJID, displayName, convName string) *string {
 	if jid.Server != "g.us" {
 		return nil
 	}
 
-	// Check if we already have a cached name
 	existing, err := c.Store.GetChat(chatJID)
 	if err == nil && existing.Name != nil && *existing.Name != "" && !strings.HasPrefix(*existing.Name, "Group ") {
 		return existing.Name
 	}
 
-	// Try conversation metadata first
 	if displayName != "" {
 		return strPtr(displayName)
 	}
@@ -355,19 +341,12 @@ func (c *Client) resolveHistoryChatName(jid types.JID, chatJID, displayName, con
 		return strPtr(convName)
 	}
 
-	// Fall back to GetGroupInfo
-	return c.updateGroupName(jid, chatJID)
+	return c.fetchGroupName(jid)
 }
 
-// updateGroupName queries WhatsApp for the group name and returns it.
-// Uses a timeout context for the API call.
-func (c *Client) updateGroupName(jid types.JID, chatJID string) *string {
-	// Check cached name first
-	existing, err := c.Store.GetChat(chatJID)
-	if err == nil && existing.Name != nil && *existing.Name != "" && !strings.HasPrefix(*existing.Name, "Group ") {
-		return existing.Name
-	}
-
+// fetchGroupName queries WhatsApp for a group name. Callers should check
+// the DB cache before calling this to avoid unnecessary network requests.
+func (c *Client) fetchGroupName(jid types.JID) *string {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -375,8 +354,6 @@ func (c *Client) updateGroupName(jid types.JID, chatJID string) *string {
 	if err == nil && groupInfo.Name != "" {
 		return strPtr(groupInfo.Name)
 	}
-
-	// Fallback placeholder
 	return strPtr(fmt.Sprintf("Group %s", jid.User))
 }
 
@@ -384,7 +361,7 @@ func (c *Client) updateGroupName(jid types.JID, chatJID string) *string {
 // if the message has no text content and no media (nothing to store).
 func (c *Client) buildMessage(id types.MessageID, chatJID, sender string, msg *waE2E.Message, ts time.Time, isFromMe bool) *appstore.Message {
 	content := extractTextContent(msg)
-	mediaType, mimeType, filename, url, mediaKey, fileSHA256, fileEncSHA256, fileLength := extractMediaInfo(msg)
+	mediaType, mimeType, filename, url, mediaKey, fileSHA256, fileEncSHA256, fileLength := extractMediaInfo(msg, ts)
 	mentionedJIDs := extractMentionedJIDs(msg)
 
 	if content == "" && mediaType == "" {
@@ -465,34 +442,37 @@ func extractTextContent(msg *waE2E.Message) string {
 }
 
 // extractMediaInfo extracts media metadata from a message without downloading
-// the media itself. Returns empty values if the message has no media.
-func extractMediaInfo(msg *waE2E.Message) (mediaType, mimeType, filename, url string, mediaKey, fileSHA256, fileEncSHA256 []byte, fileLength uint64) {
+// the media itself. Uses the message timestamp for fallback filenames.
+// Returns empty values if the message has no media.
+func extractMediaInfo(msg *waE2E.Message, ts time.Time) (mediaType, mimeType, filename, url string, mediaKey, fileSHA256, fileEncSHA256 []byte, fileLength uint64) {
 	if msg == nil {
 		return
 	}
 
+	tsStr := ts.Format("20060102_150405")
+
 	if img := msg.GetImageMessage(); img != nil {
 		return "image", img.GetMimetype(),
-			"image_" + time.Now().Format("20060102_150405") + ".jpg",
+			"image_" + tsStr + ".jpg",
 			img.GetURL(), img.GetMediaKey(), img.GetFileSHA256(), img.GetFileEncSHA256(), img.GetFileLength()
 	}
 
 	if vid := msg.GetVideoMessage(); vid != nil {
 		return "video", vid.GetMimetype(),
-			"video_" + time.Now().Format("20060102_150405") + ".mp4",
+			"video_" + tsStr + ".mp4",
 			vid.GetURL(), vid.GetMediaKey(), vid.GetFileSHA256(), vid.GetFileEncSHA256(), vid.GetFileLength()
 	}
 
 	if aud := msg.GetAudioMessage(); aud != nil {
 		return "audio", aud.GetMimetype(),
-			"audio_" + time.Now().Format("20060102_150405") + ".ogg",
+			"audio_" + tsStr + ".ogg",
 			aud.GetURL(), aud.GetMediaKey(), aud.GetFileSHA256(), aud.GetFileEncSHA256(), aud.GetFileLength()
 	}
 
 	if doc := msg.GetDocumentMessage(); doc != nil {
 		fn := doc.GetFileName()
 		if fn == "" {
-			fn = "document_" + time.Now().Format("20060102_150405")
+			fn = "document_" + tsStr
 		}
 		return "document", doc.GetMimetype(), fn,
 			doc.GetURL(), doc.GetMediaKey(), doc.GetFileSHA256(), doc.GetFileEncSHA256(), doc.GetFileLength()
@@ -500,7 +480,7 @@ func extractMediaInfo(msg *waE2E.Message) (mediaType, mimeType, filename, url st
 
 	if stk := msg.GetStickerMessage(); stk != nil {
 		return "sticker", stk.GetMimetype(),
-			"sticker_" + time.Now().Format("20060102_150405") + ".webp",
+			"sticker_" + tsStr + ".webp",
 			stk.GetURL(), stk.GetMediaKey(), stk.GetFileSHA256(), stk.GetFileEncSHA256(), stk.GetFileLength()
 	}
 

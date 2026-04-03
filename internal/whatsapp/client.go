@@ -23,7 +23,7 @@ type Client struct {
 	Log      waLog.Logger
 
 	mu            sync.Mutex
-	syncSettled   chan struct{}
+	syncSettled   chan struct{} // closed when history sync settles
 	lastSyncEvent int64
 	syncStarted   bool
 }

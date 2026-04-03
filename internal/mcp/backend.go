@@ -13,22 +13,14 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
 
+	"wabridge/internal/action"
 	"wabridge/internal/store"
 	"wabridge/internal/whatsapp"
 )
 
-// ActionBackend abstracts actions requiring a live WhatsApp connection.
-// DirectBackend implements this for standalone mode (calling whatsmeow directly).
-// A future REST-backed implementation can proxy these calls to a bridge server.
-type ActionBackend interface {
-	SendMessage(ctx context.Context, recipient, text string) error
-	SendFile(ctx context.Context, recipient, filePath string) error
-	SendAudioMessage(ctx context.Context, recipient, filePath string) error
-	DownloadMedia(ctx context.Context, messageID, chatJID string) (string, error)
-	RequestHistorySync(ctx context.Context) error
-}
+var _ action.Backend = (*DirectBackend)(nil)
 
-// DirectBackend implements ActionBackend by calling whatsmeow directly.
+// DirectBackend implements action.Backend by calling whatsmeow directly.
 // It is used in standalone mode where the MCP server and WhatsApp client
 // run in the same process.
 type DirectBackend struct {
@@ -166,7 +158,6 @@ func (b *DirectBackend) DownloadMedia(ctx context.Context, messageID, chatJID st
 		return "", fmt.Errorf("message not found: %w", err)
 	}
 
-	// Build a per-chat output directory
 	sanitizedChat := strings.ReplaceAll(chatJID, ":", "_")
 	outputDir := filepath.Join(b.MediaDir, sanitizedChat)
 

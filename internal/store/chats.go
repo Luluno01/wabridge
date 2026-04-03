@@ -6,6 +6,9 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// chatDisplayName is the COALESCE expression for resolving a chat's display name.
+const chatDisplayName = "COALESCE(chats.name, contacts.full_name, contacts.push_name, chats.jid) AS display_name"
+
 func (s *Store) UpsertChat(jid string, name *string, lastMessageTime time.Time) error {
 	chat := Chat{
 		JID:             jid,
@@ -35,8 +38,7 @@ func (s *Store) ListChats(filter string, limit int) ([]ChatResult, error) {
 	var results []ChatResult
 
 	query := s.db.Table("chats").
-		Select("chats.*, " +
-			"COALESCE(chats.name, contacts.full_name, contacts.push_name, chats.jid) AS display_name").
+		Select("chats.*, " + chatDisplayName).
 		Joins("LEFT JOIN contacts ON chats.jid = contacts.jid").
 		Order("chats.last_message_time DESC")
 
@@ -53,4 +55,21 @@ func (s *Store) ListChats(filter string, limit int) ([]ChatResult, error) {
 	}
 
 	return results, query.Scan(&results).Error
+}
+
+func (s *Store) GetDirectChatByPhone(phone string) (*ChatResult, error) {
+	var result ChatResult
+
+	err := s.db.Table("chats").
+		Select("chats.*, " + chatDisplayName).
+		Joins("LEFT JOIN contacts ON chats.jid = contacts.jid").
+		Where("chats.jid = ?", phone+"@s.whatsapp.net").
+		Scan(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	if result.JID == "" {
+		return nil, nil
+	}
+	return &result, nil
 }

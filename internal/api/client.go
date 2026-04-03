@@ -8,9 +8,11 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"wabridge/internal/action"
 )
 
-// APIClient implements ActionBackend by making HTTP requests to the bridge's
+// APIClient implements action.Backend by making HTTP requests to the bridge's
 // REST API. It is used in MCP mode where the MCP server reads SQLite directly
 // for queries but delegates actions (send, download, sync) to the bridge.
 type APIClient struct {
@@ -29,8 +31,8 @@ func NewAPIClient(baseURL string) *APIClient {
 	}
 }
 
-// Compile-time check that APIClient satisfies ActionBackend.
-var _ ActionBackend = (*APIClient)(nil)
+// Compile-time check that APIClient satisfies action.Backend.
+var _ action.Backend = (*APIClient)(nil)
 
 func (c *APIClient) SendMessage(ctx context.Context, recipient, text string) error {
 	body := map[string]string{

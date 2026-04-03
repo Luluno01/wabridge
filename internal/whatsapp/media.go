@@ -1,6 +1,7 @@
 package whatsapp
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -220,7 +221,7 @@ func AnalyzeOggOpus(data []byte) (uint32, error) {
 		// Look for OpusHead packet in the first pages
 		if !foundOpusHead && pageSeqNum <= 1 {
 			pageData := data[i : i+pageSize]
-			headIdx := findBytes(pageData, []byte("OpusHead"))
+			headIdx := bytes.Index(pageData, []byte("OpusHead"))
 			if headIdx >= 0 && headIdx+16 <= len(pageData) {
 				// OpusHead layout after the 8-byte magic:
 				//   Version(1) + Channels(1) + PreSkip(2) + SampleRate(4) + ...
@@ -260,24 +261,6 @@ func AnalyzeOggOpus(data []byte) (uint32, error) {
 	}
 
 	return duration, nil
-}
-
-// findBytes returns the index of the first occurrence of needle in haystack,
-// or -1 if not found.
-func findBytes(haystack, needle []byte) int {
-	for i := 0; i <= len(haystack)-len(needle); i++ {
-		match := true
-		for j := range needle {
-			if haystack[i+j] != needle[j] {
-				match = false
-				break
-			}
-		}
-		if match {
-			return i
-		}
-	}
-	return -1
 }
 
 // PlaceholderWaveform generates a synthetic 64-byte waveform for voice messages.

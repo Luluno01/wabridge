@@ -60,23 +60,28 @@ func (s *Store) GetMessage(id, chatJID string) (*Message, error) {
 	return &msg, nil
 }
 
+// messageSelect is the common SELECT clause for message queries with display names.
+const messageSelect = "messages.*, " +
+	"COALESCE(chats.name, ct_chat.full_name, ct_chat.push_name, messages.chat_jid) AS chat_name, " +
+	"COALESCE(ct_sender.full_name, ct_sender.push_name, messages.sender) AS sender_name"
+
+// messageJoins applies the standard joins for message queries with display names.
+func messageJoins(q *gorm.DB) *gorm.DB {
+	return q.Joins("LEFT JOIN chats ON messages.chat_jid = chats.jid").
+		Joins("LEFT JOIN contacts ct_chat ON messages.chat_jid = ct_chat.jid").
+		Joins("LEFT JOIN contacts ct_sender ON messages.sender = ct_sender.jid")
+}
+
 func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 	var results []MessageResult
 
-	query := s.db.Table("messages").
-		Select("messages.*, " +
-			"COALESCE(chats.name, ct_chat.full_name, ct_chat.push_name, messages.chat_jid) AS chat_name, " +
-			"COALESCE(ct_sender.full_name, ct_sender.push_name, messages.sender) AS sender_name").
-		Joins("LEFT JOIN chats ON messages.chat_jid = chats.jid").
-		Joins("LEFT JOIN contacts ct_chat ON messages.chat_jid = ct_chat.jid").
-		Joins("LEFT JOIN contacts ct_sender ON messages.sender = ct_sender.jid")
+	query := messageJoins(s.db.Table("messages").Select(messageSelect))
 
 	if opts.ChatJID != "" {
 		query = query.Where("messages.chat_jid = ?", opts.ChatJID)
 	}
 	if opts.Sender != "" {
-		like := "%" + opts.Sender + "%"
-		query = query.Where("messages.sender LIKE ?", like)
+		query = query.Where("messages.sender = ?", opts.Sender)
 	}
 	if opts.After != nil {
 		query = query.Where("messages.timestamp >= ?", *opts.After)
@@ -114,23 +119,13 @@ func (s *Store) GetMessageContext(id, chatJID string, beforeCount, afterCount in
 		return nil, fmt.Errorf("message not found: %w", err)
 	}
 
-	baseSelect := "messages.*, " +
-		"COALESCE(chats.name, ct_chat.full_name, ct_chat.push_name, messages.chat_jid) AS chat_name, " +
-		"COALESCE(ct_sender.full_name, ct_sender.push_name, messages.sender) AS sender_name"
-
-	baseJoins := func(q *gorm.DB) *gorm.DB {
-		return q.Joins("LEFT JOIN chats ON messages.chat_jid = chats.jid").
-			Joins("LEFT JOIN contacts ct_chat ON messages.chat_jid = ct_chat.jid").
-			Joins("LEFT JOIN contacts ct_sender ON messages.sender = ct_sender.jid")
-	}
-
 	// Before (including target)
 	var before []MessageResult
-	q := s.db.Table("messages").Select(baseSelect).
+	q := messageJoins(s.db.Table("messages").Select(messageSelect)).
 		Where("messages.chat_jid = ? AND messages.timestamp <= ?", chatJID, target.Timestamp).
 		Order("messages.timestamp DESC").
 		Limit(beforeCount + 1)
-	if err := baseJoins(q).Scan(&before).Error; err != nil {
+	if err := q.Scan(&before).Error; err != nil {
 		return nil, fmt.Errorf("failed to query before context: %w", err)
 	}
 
@@ -140,11 +135,11 @@ func (s *Store) GetMessageContext(id, chatJID string, beforeCount, afterCount in
 
 	// After (excluding target)
 	var after []MessageResult
-	q = s.db.Table("messages").Select(baseSelect).
+	q = messageJoins(s.db.Table("messages").Select(messageSelect)).
 		Where("messages.chat_jid = ? AND messages.timestamp > ?", chatJID, target.Timestamp).
 		Order("messages.timestamp ASC").
 		Limit(afterCount)
-	if err := baseJoins(q).Scan(&after).Error; err != nil {
+	if err := q.Scan(&after).Error; err != nil {
 		return nil, fmt.Errorf("failed to query after context: %w", err)
 	}
 
@@ -155,8 +150,7 @@ func (s *Store) GetContactChats(contactJID string, limit int) ([]ChatResult, err
 	var results []ChatResult
 
 	err := s.db.Table("chats").
-		Select("DISTINCT chats.*, "+
-			"COALESCE(chats.name, contacts.full_name, contacts.push_name, chats.jid) AS display_name").
+		Select("DISTINCT chats.*, " + chatDisplayName).
 		Joins("LEFT JOIN contacts ON chats.jid = contacts.jid").
 		Joins("INNER JOIN messages ON messages.chat_jid = chats.jid").
 		Where("messages.sender = ? OR messages.chat_jid LIKE ?", contactJID, "%"+contactJID+"%").

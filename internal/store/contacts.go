@@ -38,10 +38,6 @@ func (s *Store) UpsertContact(contact *Contact) error {
 	})
 }
 
-func (s *Store) ClearContactField(jid, field string) error {
-	return s.db.Model(&Contact{}).Where("jid = ?", jid).Update(field, nil).Error
-}
-
 func (s *Store) GetContact(jid string) (*Contact, error) {
 	var contact Contact
 	if err := s.db.Where("jid = ?", jid).First(&contact).Error; err != nil {

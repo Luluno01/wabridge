@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockBackend implements ActionBackend for testing.
+// mockBackend implements action.Backend for testing.
 type mockBackend struct {
 	sendMessageCalled    bool
 	sendFileCalled       bool
@@ -69,13 +69,7 @@ func newTestServer(backend *mockBackend) *APIServer {
 func doRequest(t *testing.T, s *APIServer, method, path string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", s.handleHealth)
-	mux.HandleFunc("POST /api/send", s.handleSend)
-	mux.HandleFunc("POST /api/send-file", s.handleSendFile)
-	mux.HandleFunc("POST /api/send-audio", s.handleSendAudio)
-	mux.HandleFunc("POST /api/download", s.handleDownload)
-	mux.HandleFunc("POST /api/sync-history", s.handleSyncHistory)
+	handler := s.Handler()
 
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -91,7 +85,7 @@ func doRequest(t *testing.T, s *APIServer, method, path string, body any) *httpt
 		req.Header.Set("Content-Type", "application/json")
 	}
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	handler.ServeHTTP(rr, req)
 	return rr
 }
 
@@ -170,11 +164,9 @@ func TestSendMessage_InvalidJSON(t *testing.T) {
 	backend := &mockBackend{}
 	srv := newTestServer(backend)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/send", srv.handleSend)
 	req := httptest.NewRequest("POST", "/api/send", bytes.NewBufferString("{invalid"))
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	srv.Handler().ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	resp := parseResponse(t, rr)
