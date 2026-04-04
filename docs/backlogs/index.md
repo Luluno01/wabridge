@@ -10,4 +10,4 @@ Feature ideas and improvements for future implementation.
 | ~~[Docker path alignment](2026-04-03-docker-path-alignment.md)~~ | Done — `WABRIDGE_DATA_DIR` bind-mounted to same path in container |
 | [Grouped message ID](2026-04-04-grouped-message-id.md) | Store `ContextInfo.GroupedMessageID` so consumers can associate album photos as a batch |
 | [Unicode search normalization](2026-04-04-unicode-search-normalization.md) | Normalize smart quotes to ASCII so message search matches regardless of quote style |
-| ~~[Media filename collision](2026-04-04-media-filename-collision.md)~~ | Done — fallback filenames now include message ID prefix for uniqueness |
+| ~~[Media filename collision](2026-04-04-media-filename-collision.md)~~ | Done — on-disk filenames use message ID + extension, eliminating collisions |
