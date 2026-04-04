@@ -31,16 +31,17 @@ docker compose run --rm -T mcp     # ephemeral MCP server
 | MCP tools         | docs/MCP_TOOLS.md        |
 | REST API          | docs/REST_API.md         |
 | WhatsApp quirks   | docs/WHATSAPP_QUIRKS.md  |
-| Design spec       | docs/specs/2026-04-02-wabridge-design.md |
+| Design spec       | docs/specs/2026-04-02-wabridge-design.md (archived — historical reference only) |
 
 ## Project Layout
 
 ```
-cmd/           CLI subcommands (standalone, bridge, mcp)
+cmd/           CLI subcommands (standalone, bridge, mcp) + shared runtime
 internal/
+  action/      Backend interface for WhatsApp actions
   store/       GORM models and database queries
   whatsapp/    whatsmeow connection, events, media
-  mcp/         MCP tool definitions and server
+  mcp/         MCP tool definitions, server, DirectBackend
   api/         REST API server and client
   mention/     @mention resolution
 ```

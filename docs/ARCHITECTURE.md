@@ -66,24 +66,26 @@ Both processes mount the same SQLite database. Queries (list chats, search messa
 ```
 cmd/
   root.go          Cobra root command, global flags (--db, --log-level)
-  standalone.go    Wires whatsapp.Client + DirectBackend + mcp.Server
-  bridge.go        Wires whatsapp.Client + DirectBackend + api.APIServer
+  runtime.go       Shared startup: newRuntime (store + whatsapp + backend), signal handling
+  standalone.go    Wires runtime + mcp.Server
+  bridge.go        Wires runtime + api.APIServer
   mcp.go           Wires api.APIClient + mcp.Server (no WhatsApp)
 
 internal/
+  action/          Backend interface — abstracts actions requiring a live WhatsApp connection
   store/           GORM-backed SQLite: models, migrations, queries
   whatsapp/        whatsmeow wrapper: connection, event handlers, media utils
-  mcp/             MCP server, tool registration, ActionBackend interface + DirectBackend
-  api/             REST API server (bridge side) and client (MCP side)
+  mcp/             MCP server, tool registration, DirectBackend (implements action.Backend)
+  api/             REST API server (bridge side) and client (MCP side, implements action.Backend)
   mention/         @mention JID-to-name resolution in message text
 ```
 
 ## Key Interfaces
 
-**ActionBackend** (defined in `internal/mcp/backend.go`):
+**action.Backend** (defined in `internal/action/action.go`):
 
 ```go
-type ActionBackend interface {
+type Backend interface {
     SendMessage(ctx, recipient, text) error
     SendFile(ctx, recipient, filePath) error
     SendAudioMessage(ctx, recipient, filePath) error
@@ -93,7 +95,7 @@ type ActionBackend interface {
 ```
 
 Two implementations:
-- **DirectBackend** -- calls whatsmeow directly (standalone and bridge modes)
+- **mcp.DirectBackend** -- calls whatsmeow directly (standalone and bridge modes)
 - **api.APIClient** -- proxies calls over HTTP to the bridge (MCP mode)
 
 ## Docker
@@ -105,4 +107,4 @@ services:
   standalone:   # all-in-one alternative
 ```
 
-All services share a named volume (`store`) mounted at `/app/store` for the SQLite database, WhatsApp session, and downloaded media.
+All services bind-mount `WABRIDGE_DATA_DIR` to the same path inside the container (identity mount) so media paths work on both host and container. Services run as `WABRIDGE_UID:WABRIDGE_GID` with `umask 077` for strict file permissions. See `.env.example` for configuration.

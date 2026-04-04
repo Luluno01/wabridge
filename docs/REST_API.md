@@ -1,6 +1,6 @@
 # REST API
 
-The bridge process exposes a REST API on `:8080` (configurable with `--addr`). The MCP process uses this API to delegate actions that require a live WhatsApp connection. All endpoints return JSON with a standard envelope:
+The bridge process exposes a REST API on `:8080` (configurable with `--addr`). In bridge+mcp mode, the MCP process uses this API to delegate actions that require a live WhatsApp connection — see [ARCHITECTURE.md](ARCHITECTURE.md) for the data flow. All endpoints return JSON with a standard envelope:
 
 ```json
 {"success": true, "message": "...", "data": ...}

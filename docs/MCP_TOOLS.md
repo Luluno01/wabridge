@@ -75,6 +75,7 @@ List messages with filtering options. The primary query tool.
 | `limit` | number | no | Maximum results (default 50) |
 | `page` | number | no | Page number for pagination |
 | `raw` | boolean | no | If true, skip mention resolution |
+| `latest` | boolean | no | If true, return most recent messages first (default false) |
 
 Returns: array of message objects with `chat_name` and `sender_name` resolved.
 
@@ -106,6 +107,8 @@ Returns: array of messages in chronological order, centered around the target me
 ---
 
 ## Action Tools
+
+Action tools require a live WhatsApp connection. In bridge+mcp mode, the MCP server delegates these to the bridge process over REST — see [ARCHITECTURE.md](ARCHITECTURE.md) and [REST_API.md](REST_API.md) for details.
 
 ### send_message
 

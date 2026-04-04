@@ -88,21 +88,7 @@ docker compose run --rm -T mcp
 
 ## MCP Tools
 
-| Tool | Description |
-|------|-------------|
-| `list_chats` | List chats sorted by most recent message |
-| `list_messages` | Query messages with filters (chat, sender, date range, search) |
-| `search_contacts` | Search contacts by name or phone number |
-| `get_chat` | Get single chat metadata |
-| `get_direct_chat_by_contact` | Find a 1:1 chat by phone number |
-| `get_contact_chats` | Get all chats involving a contact |
-| `get_last_interaction` | Most recent message with a contact |
-| `get_message_context` | Messages surrounding a specific message |
-| `send_message` | Send a text message |
-| `send_file` | Send an image, video, or document |
-| `send_audio_message` | Send a voice message (Ogg Opus) |
-| `download_media` | Download a media attachment |
-| `request_history_sync` | Request older message history |
+wabridge exposes 13 MCP tools for reading chats, contacts, and messages, and for sending messages and media. See [docs/MCP_TOOLS.md](docs/MCP_TOOLS.md) for the full parameter reference.
 
 ## Documentation
 

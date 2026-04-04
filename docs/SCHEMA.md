@@ -38,7 +38,7 @@ Stores message content and media metadata. Media bytes are not stored -- only en
 | `content` | TEXT | | Text content (empty for media-only) |
 | `timestamp` | TIMESTAMP | NOT NULL, indexed | Message timestamp |
 | `is_from_me` | BOOLEAN | NOT NULL | Whether the message was sent by the bridge user |
-| `media_type` | TEXT | nullable | `image`, `video`, `audio`, `document`, or NULL |
+| `media_type` | TEXT | nullable | `image`, `video`, `audio`, `document`, `sticker`, or NULL |
 | `mime_type` | TEXT | nullable | MIME type string |
 | `filename` | TEXT | nullable | Original filename |
 | `url` | TEXT | nullable | WhatsApp CDN URL |
@@ -46,7 +46,7 @@ Stores message content and media metadata. Media bytes are not stored -- only en
 | `file_sha256` | BLOB | nullable | SHA-256 of decrypted file |
 | `file_enc_sha256` | BLOB | nullable | SHA-256 of encrypted file |
 | `file_length` | INTEGER | nullable | File size in bytes |
-| `mentioned_jids` | TEXT | nullable | Comma-separated JIDs mentioned in the message |
+| `mentioned_jids` | TEXT | nullable | JSON array of JIDs mentioned in the message (e.g., `["123@s.whatsapp.net"]`) |
 
 ## JID Format Reference
 
@@ -56,7 +56,7 @@ Stores message content and media metadata. Media bytes are not stored -- only en
 | LID JID | `18273648@lid` | Individual chat, opaque server-assigned ID |
 | Group JID | `120363012345678901@g.us` | Group chat |
 
-JIDs are always stored in "non-AD" form (`ToNonAD().String()`), which strips the `:device` suffix to produce a canonical identifier that matches across contexts.
+JIDs are always stored in "non-AD" form (`ToNonAD().String()`), which strips the `:device` suffix to produce a canonical identifier that matches across contexts. See [WHATSAPP_QUIRKS.md](WHATSAPP_QUIRKS.md) for behavioral context on JID migration and `ParseWebMessage`.
 
 ## Name Resolution Strategy
 
@@ -90,7 +90,7 @@ WhatsApp is migrating from phone-based JIDs to LID-based JIDs. The same person c
 1. **Phone row**: `{jid: "1234567890@s.whatsapp.net", phone_jid: NULL, push_name: "Alice", full_name: "Alice Smith"}`
 2. **LID row**: `{jid: "18273648@lid", phone_jid: "1234567890@s.whatsapp.net", push_name: "Alice", full_name: "Alice Smith"}`
 
-The LID-to-phone mapping comes from whatsmeow's `client.Store.LIDs.GetLIDForPN()`.
+The LID-to-phone mapping comes from whatsmeow's `client.Store.LIDs.GetLIDForPN()`. See [WHATSAPP_QUIRKS.md — Phone-to-LID Migration](WHATSAPP_QUIRKS.md#phone-to-lid-migration) for why this is necessary.
 
 ## Contact Upsert Behavior
 

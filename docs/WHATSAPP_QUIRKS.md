@@ -1,22 +1,16 @@
 # WhatsApp Quirks
 
-Practical notes on working with WhatsApp via whatsmeow. Distilled from building wabridge.
+Practical notes on working with WhatsApp via whatsmeow. Distilled from building wabridge. For data model details, see [SCHEMA.md](SCHEMA.md). For architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## JID Formats
 
-WhatsApp uses three identifier formats:
-
-| Format | Example | Meaning |
-|--------|---------|---------|
-| Phone JID | `1234567890@s.whatsapp.net` | Individual chat, phone-number-based |
-| LID JID | `18273648@lid` | Individual chat, opaque server-assigned ID |
-| Group JID | `120363012345678901@g.us` | Group chat |
+WhatsApp uses three identifier formats — see [SCHEMA.md — JID Format Reference](SCHEMA.md#jid-format-reference) for the format table.
 
 ### Phone-to-LID Migration
 
 WhatsApp is migrating from phone-based JIDs to LID-based JIDs. The same person can appear as either format depending on context -- history sync messages may use phone JIDs while real-time messages use LID JIDs, or vice versa.
 
-You must handle both and link them. wabridge does this with a dual-entry contact strategy: each contact gets two rows in the contacts table, one keyed by phone JID and one by LID JID, cross-referenced via the `phone_jid` column. The LID-to-phone mapping comes from `client.Store.LIDs.GetLIDForPN()`.
+You must handle both and link them. wabridge does this with a dual-entry contact strategy — see [SCHEMA.md — Contact Dual-Entry Strategy](SCHEMA.md#contact-dual-entry-strategy) for the data model. The LID-to-phone mapping comes from `client.Store.LIDs.GetLIDForPN()`.
 
 Always store JIDs in "non-AD" form (`Sender.ToNonAD().String()`), which strips the `:device` suffix to produce a canonical identifier.
 
@@ -78,6 +72,7 @@ Detected from file extension at send time:
 - **Image**: jpg, jpeg, png, gif, webp
 - **Video**: mp4, avi, mov, mkv
 - **Audio**: ogg, mp3, wav, m4a
+- **Sticker**: webp (received only — stickers are stored as media type `sticker`)
 - **Document**: everything else
 
 ### Voice Messages (Ogg Opus + Waveform)

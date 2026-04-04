@@ -1,5 +1,7 @@
 # wabridge Design Spec
 
+> **Archived.** This is the original design spec written before implementation. The current source of truth is the implemented code and its reference docs: [ARCHITECTURE.md](../ARCHITECTURE.md), [SCHEMA.md](../SCHEMA.md), [MCP_TOOLS.md](../MCP_TOOLS.md), [REST_API.md](../REST_API.md). Known divergences from final implementation: Docker compose uses CLI flags (not `WABRIDGE_API_URL` env var), `ActionBackend` was extracted to `internal/action/action.go`, `events.Connected` does not trigger a contact dump (it happens post-history-sync).
+
 WhatsApp MCP bridge — single Go binary that connects to WhatsApp via whatsmeow, stores messages in SQLite, and serves MCP tools over stdio.
 
 ## Modes
