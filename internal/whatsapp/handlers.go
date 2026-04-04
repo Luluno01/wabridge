@@ -442,7 +442,8 @@ func extractTextContent(msg *waE2E.Message) string {
 }
 
 // extractMediaInfo extracts media metadata from a message without downloading
-// the media itself. Uses the message timestamp for fallback filenames.
+// the media itself. Fallback filenames use the message timestamp for display.
+// The actual on-disk filename is determined by DownloadMedia using the message ID.
 // Returns empty values if the message has no media.
 func extractMediaInfo(msg *waE2E.Message, ts time.Time) (mediaType, mimeType, filename, url string, mediaKey, fileSHA256, fileEncSHA256 []byte, fileLength uint64) {
 	if msg == nil {

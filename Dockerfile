@@ -14,7 +14,6 @@ FROM alpine:3.21
 RUN apk add --no-cache ca-certificates ffmpeg
 
 COPY --from=builder /wabridge /usr/local/bin/wabridge
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
-WORKDIR /app/store
-
-ENTRYPOINT ["wabridge"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

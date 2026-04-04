@@ -14,5 +14,11 @@ media/
 .vscode/
 .DS_Store
 
+# Docker env (contains local paths/UID)
+.env
+
 # MCP config (contains local paths)
 .mcp.json
+
+# The data directory
+.wabridge

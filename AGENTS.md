@@ -15,7 +15,9 @@ go build -o wabridge .
 ./wabridge bridge &
 ./wabridge mcp
 
-# Docker
+# Docker (requires .env — see .env.example)
+cp .env.example .env               # edit WABRIDGE_DATA_DIR, UID, GID
+mkdir -p "$WABRIDGE_DATA_DIR"
 docker compose up bridge           # persistent bridge
 docker compose run --rm -T mcp     # ephemeral MCP server
 ```

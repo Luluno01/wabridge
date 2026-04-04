@@ -74,6 +74,11 @@ Start the bridge first (`./wabridge bridge`), then configure your MCP client:
 ### Docker
 
 ```bash
+# Setup (one-time)
+cp .env.example .env
+# Edit .env: set WABRIDGE_DATA_DIR, WABRIDGE_UID, WABRIDGE_GID
+mkdir -p "$WABRIDGE_DATA_DIR"  # must exist before first run
+
 # Start bridge
 docker compose up -d bridge
 

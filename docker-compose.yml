@@ -1,19 +1,28 @@
 services:
   bridge:
     build: .
-    command: ["bridge", "--db", "/app/store/messages.db", "--session-db", "/app/store/whatsapp.db", "--media-dir", "/app/store/media"]
+    command:
+      - bridge
+      - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
+      - --session-db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/whatsapp.db
+      - --media-dir=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/media
     restart: unless-stopped
+    user: "${WABRIDGE_UID:-1000}:${WABRIDGE_GID:-1000}"
     volumes:
-      - store:/app/store
+      - ${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}:${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}
     networks:
       - wabridge-net
 
   mcp:
     build: .
-    command: ["mcp", "--db", "/app/store/messages.db", "--bridge-url", "http://bridge:8080"]
+    command:
+      - mcp
+      - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
+      - --bridge-url=http://bridge:8080
     stdin_open: true
+    user: "${WABRIDGE_UID:-1000}:${WABRIDGE_GID:-1000}"
     volumes:
-      - store:/app/store
+      - ${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}:${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}
     networks:
       - wabridge-net
     depends_on:
@@ -23,15 +32,17 @@ services:
 
   standalone:
     build: .
-    command: ["standalone", "--db", "/app/store/messages.db", "--session-db", "/app/store/whatsapp.db", "--media-dir", "/app/store/media"]
+    command:
+      - standalone
+      - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
+      - --session-db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/whatsapp.db
+      - --media-dir=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/media
     stdin_open: true
+    user: "${WABRIDGE_UID:-1000}:${WABRIDGE_GID:-1000}"
     volumes:
-      - store:/app/store
+      - ${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}:${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}
     profiles:
       - standalone
-
-volumes:
-  store:
 
 networks:
   wabridge-net:

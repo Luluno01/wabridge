@@ -32,12 +32,15 @@ func (c *Client) DownloadMedia(ctx context.Context, msg *appstore.Message, outpu
 		return "", fmt.Errorf("incomplete media metadata for download")
 	}
 
-	// Determine filename
-	filename := "media"
+	// Use message ID as filename — guaranteed unique per message.
+	var ext string
 	if msg.Filename != nil && *msg.Filename != "" {
-		filename = *msg.Filename
+		ext = filepath.Ext(*msg.Filename)
 	}
-	localPath := filepath.Join(outputDir, filename)
+	if ext == "" {
+		ext = mediaTypeToExt(*msg.MediaType)
+	}
+	localPath := filepath.Join(outputDir, msg.ID+ext)
 
 	// Check if already downloaded
 	absPath, err := filepath.Abs(localPath)
@@ -135,6 +138,21 @@ func buildDownloadable(mediaType, url, directPath string, mediaKey, fileSHA256, 
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported media type: %s", mediaType)
+	}
+}
+
+func mediaTypeToExt(mediaType string) string {
+	switch mediaType {
+	case "image":
+		return ".jpg"
+	case "video":
+		return ".mp4"
+	case "audio":
+		return ".ogg"
+	case "sticker":
+		return ".webp"
+	default:
+		return ".bin"
 	}
 }
 
