@@ -362,7 +362,7 @@ func (c *Client) fetchGroupName(jid types.JID) *string {
 func (c *Client) buildMessage(id types.MessageID, chatJID, sender string, msg *waE2E.Message, ts time.Time, isFromMe bool) *appstore.Message {
 	content := extractTextContent(msg)
 	mediaType, mimeType, filename, url, mediaKey, fileSHA256, fileEncSHA256, fileLength := extractMediaInfo(msg, ts)
-	mentionedJIDs := extractMentionedJIDs(msg)
+	ctxInfo := extractContextInfo(msg)
 
 	if content == "" && mediaType == "" {
 		return nil
@@ -402,8 +402,20 @@ func (c *Client) buildMessage(id types.MessageID, chatJID, sender string, msg *w
 		fl := int64(fileLength)
 		storeMsg.FileLength = &fl
 	}
-	if mentionedJIDs != "" {
-		storeMsg.MentionedJIDs = strPtr(mentionedJIDs)
+	if ctxInfo.MentionedJIDs != "" {
+		storeMsg.MentionedJIDs = strPtr(ctxInfo.MentionedJIDs)
+	}
+	if ctxInfo.QuotedMessageID != "" {
+		storeMsg.QuotedMessageID = strPtr(ctxInfo.QuotedMessageID)
+	}
+	if ctxInfo.QuotedSender != "" {
+		storeMsg.QuotedSender = strPtr(ctxInfo.QuotedSender)
+	}
+	if ctxInfo.QuotedContent != "" {
+		storeMsg.QuotedContent = strPtr(ctxInfo.QuotedContent)
+	}
+	if ctxInfo.QuotedMediaType != "" {
+		storeMsg.QuotedMediaType = strPtr(ctxInfo.QuotedMediaType)
 	}
 
 	return storeMsg
@@ -488,11 +500,20 @@ func extractMediaInfo(msg *waE2E.Message, ts time.Time) (mediaType, mimeType, fi
 	return
 }
 
-// extractMentionedJIDs collects @-mentioned JIDs from a message's ContextInfo
-// and returns them as a comma-separated string. Returns "" if none.
-func extractMentionedJIDs(msg *waE2E.Message) string {
+type contextInfoResult struct {
+	MentionedJIDs   string
+	QuotedMessageID string
+	QuotedSender    string
+	QuotedContent   string
+	QuotedMediaType string
+}
+
+// extractContextInfo extracts all ContextInfo-derived fields from a message:
+// mentioned JIDs, quoted message ID, quoted sender, quoted content snapshot,
+// and quoted media type. Single type-switch avoids duplicating the ContextInfo lookup.
+func extractContextInfo(msg *waE2E.Message) contextInfoResult {
 	if msg == nil {
-		return ""
+		return contextInfoResult{}
 	}
 
 	var ctx *waE2E.ContextInfo
@@ -507,19 +528,53 @@ func extractMentionedJIDs(msg *waE2E.Message) string {
 		ctx = doc.GetContextInfo()
 	} else if aud := msg.GetAudioMessage(); aud != nil {
 		ctx = aud.GetContextInfo()
+	} else if stk := msg.GetStickerMessage(); stk != nil {
+		ctx = stk.GetContextInfo()
 	}
 
 	if ctx == nil {
-		return ""
+		return contextInfoResult{}
 	}
 
-	jids := ctx.GetMentionedJID()
-	if len(jids) == 0 {
-		return ""
+	var result contextInfoResult
+
+	// Mentions
+	if jids := ctx.GetMentionedJID(); len(jids) > 0 {
+		data, _ := json.Marshal(jids)
+		result.MentionedJIDs = string(data)
 	}
 
-	data, _ := json.Marshal(jids)
-	return string(data)
+	// Quoted message
+	if stanzaID := ctx.GetStanzaID(); stanzaID != "" {
+		result.QuotedMessageID = stanzaID
+		result.QuotedSender = ctx.GetParticipant()
+
+		if qm := ctx.GetQuotedMessage(); qm != nil {
+			result.QuotedContent = extractTextContent(qm)
+			result.QuotedMediaType = quotedMediaType(qm)
+		}
+	}
+
+	return result
+}
+
+// quotedMediaType returns the media type string for a quoted message,
+// or "" if it's a text-only message.
+func quotedMediaType(msg *waE2E.Message) string {
+	switch {
+	case msg.GetImageMessage() != nil:
+		return "image"
+	case msg.GetVideoMessage() != nil:
+		return "video"
+	case msg.GetAudioMessage() != nil:
+		return "audio"
+	case msg.GetDocumentMessage() != nil:
+		return "document"
+	case msg.GetStickerMessage() != nil:
+		return "sticker"
+	default:
+		return ""
+	}
 }
 
 // strPtr returns a pointer to the given string. Convenience helper to avoid
