@@ -1,5 +1,7 @@
 # Quoted message references — design spec
 
+**Backlog item:** [Store quoted message references](../../backlogs/2026-03-04-quoted-message.md)
+
 ## Problem
 
 WhatsApp messages can reply to other messages. The protobuf includes this in `ContextInfo.stanzaID` (quoted message ID), `ContextInfo.participant` (quoted sender), and `ContextInfo.quotedMessage` (content snapshot). We don't store any of this, so reply relationships are invisible to MCP consumers.

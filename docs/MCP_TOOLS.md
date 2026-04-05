@@ -77,7 +77,7 @@ List messages with filtering options. The primary query tool.
 | `raw` | boolean | no | If true, skip mention resolution |
 | `latest` | boolean | no | If true, return most recent messages first (default false) |
 
-Returns: array of message objects with `chat_name` and `sender_name` resolved.
+Returns: array of message objects with `chat_name` and `sender_name` resolved. Reply messages include `quoted_message_id`, `quoted_sender`, `quoted_content`, and optionally `quoted_media_type` — see [SCHEMA.md](SCHEMA.md) for details.
 
 ### get_last_interaction
 

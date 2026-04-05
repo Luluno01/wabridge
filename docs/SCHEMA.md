@@ -47,6 +47,10 @@ Stores message content and media metadata. Media bytes are not stored -- only en
 | `file_enc_sha256` | BLOB | nullable | SHA-256 of encrypted file |
 | `file_length` | INTEGER | nullable | File size in bytes |
 | `mentioned_jids` | TEXT | nullable | JSON array of JIDs mentioned in the message (e.g., `["123@s.whatsapp.net"]`) |
+| `quoted_message_id` | TEXT | nullable | ID of the message being replied to (from `ContextInfo.stanzaID`) |
+| `quoted_sender` | TEXT | nullable | JID of the sender of the quoted message (from `ContextInfo.participant`) |
+| `quoted_content` | TEXT | nullable | Text snapshot of the quoted message |
+| `quoted_media_type` | TEXT | nullable | Media type of the quoted message (`image`, `video`, `audio`, `document`, `sticker`) if applicable |
 
 ## JID Format Reference
 
