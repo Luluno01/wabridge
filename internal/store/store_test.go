@@ -306,6 +306,44 @@ func TestStoreMessage_QuotedFieldsUpsert(t *testing.T) {
 	assert.Equal(t, "image", *got.QuotedMediaType)
 }
 
+func TestListMessages_IncludesQuotedFields(t *testing.T) {
+	s := newTestStore(t)
+	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+
+	s.StoreMessage(&Message{
+		ID:        "orig1",
+		ChatJID:   "chat@g.us",
+		Sender:    "bob@s.whatsapp.net",
+		Content:   "What do you think?",
+		Timestamp: base,
+	})
+	s.StoreMessage(&Message{
+		ID:              "reply1",
+		ChatJID:         "chat@g.us",
+		Sender:          "alice@s.whatsapp.net",
+		Content:         "I agree!",
+		Timestamp:       base.Add(time.Minute),
+		QuotedMessageID: strPtr("orig1"),
+		QuotedSender:    strPtr("bob@s.whatsapp.net"),
+		QuotedContent:   strPtr("What do you think?"),
+	})
+
+	results, err := s.ListMessages(ListMessagesOpts{ChatJID: "chat@g.us", Limit: 10})
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+
+	// First message (orig) has no quoted fields
+	assert.Nil(t, results[0].QuotedMessageID)
+
+	// Second message (reply) has quoted fields
+	require.NotNil(t, results[1].QuotedMessageID)
+	assert.Equal(t, "orig1", *results[1].QuotedMessageID)
+	require.NotNil(t, results[1].QuotedSender)
+	assert.Equal(t, "bob@s.whatsapp.net", *results[1].QuotedSender)
+	require.NotNil(t, results[1].QuotedContent)
+	assert.Equal(t, "What do you think?", *results[1].QuotedContent)
+}
+
 func TestGetMessageContext(t *testing.T) {
 	s := newTestStore(t)
 	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)

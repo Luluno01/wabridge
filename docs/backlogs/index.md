@@ -4,7 +4,7 @@ Feature ideas and improvements for future implementation.
 
 | Item | Description |
 |------|-------------|
-| [Quoted message references](2026-03-04-quoted-message.md) | Store reply-to metadata from ContextInfo so we can definitively link replies to their parent messages |
+| ~~[Quoted message references](2026-03-04-quoted-message.md)~~ | Done — `quoted_message_id`, `quoted_sender`, `quoted_content`, `quoted_media_type` extracted from ContextInfo |
 | [Fix history sync](2026-04-03-history-sync-fix.md) | Pass a valid message cursor to BuildHistorySyncRequest instead of nil (current call always panics) |
 | ~~[Docker UID/GID & permissions](2026-04-03-docker-uid-permissions.md)~~ | Done — `user:` directive + `umask 077` in entrypoint |
 | ~~[Docker path alignment](2026-04-03-docker-path-alignment.md)~~ | Done — `WABRIDGE_DATA_DIR` bind-mounted to same path in container |
