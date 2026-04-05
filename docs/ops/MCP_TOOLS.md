@@ -77,7 +77,7 @@ List messages with filtering options. The primary query tool.
 | `raw` | boolean | no | If true, skip mention resolution |
 | `latest` | boolean | no | If true, return most recent messages first (default false) |
 
-Returns: array of message objects with `chat_name` and `sender_name` resolved. Reply messages include `quoted_message_id`, `quoted_sender`, `quoted_content`, and optionally `quoted_media_type` — see [SCHEMA.md](SCHEMA.md) for details.
+Returns: array of message objects with `chat_name` and `sender_name` resolved. Reply messages include `quoted_message_id`, `quoted_sender`, `quoted_content`, and optionally `quoted_media_type` — see [SCHEMA.md](../dev/SCHEMA.md) for details.
 
 ### get_last_interaction
 
@@ -108,7 +108,7 @@ Returns: array of messages in chronological order, centered around the target me
 
 ## Action Tools
 
-Action tools require a live WhatsApp connection. In bridge+mcp mode, the MCP server delegates these to the bridge process over REST — see [ARCHITECTURE.md](ARCHITECTURE.md) and [REST_API.md](REST_API.md) for details.
+Action tools require a live WhatsApp connection. In bridge+mcp mode, the MCP server delegates these to the bridge process over REST — see [ARCHITECTURE.md](../dev/ARCHITECTURE.md) and [REST_API.md](REST_API.md) for details.
 
 ### send_message
 

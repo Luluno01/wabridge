@@ -609,13 +609,13 @@ Expected: PASS (fields flow through via embedded `Message` struct in `MessageRes
 In `docs/backlogs/index.md`, change line 7 from:
 
 ```
-| [Quoted message references](2026-03-04-quoted-message.md) | Store reply-to metadata from ContextInfo so we can definitively link replies to their parent messages |
+| [Quoted message references](../backlogs/2026-03-04-quoted-message.md) | Store reply-to metadata from ContextInfo so we can definitively link replies to their parent messages |
 ```
 
 to:
 
 ```
-| ~~[Quoted message references](2026-03-04-quoted-message.md)~~ | Done — `quoted_message_id`, `quoted_sender`, `quoted_content`, `quoted_media_type` extracted from ContextInfo |
+| ~~[Quoted message references](../backlogs/2026-03-04-quoted-message.md)~~ | Done — `quoted_message_id`, `quoted_sender`, `quoted_content`, `quoted_media_type` extracted from ContextInfo |
 ```
 
 - [ ] **Step 4: Run full test suite**

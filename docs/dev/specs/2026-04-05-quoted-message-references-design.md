@@ -1,6 +1,6 @@
 # Quoted message references — design spec
 
-**Backlog item:** [Store quoted message references](../../backlogs/2026-03-04-quoted-message.md)
+**Backlog item:** [Store quoted message references](../backlogs/2026-03-04-quoted-message.md)
 
 ## Problem
 

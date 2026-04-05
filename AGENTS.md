@@ -26,12 +26,12 @@ docker compose run --rm -T mcp     # ephemeral MCP server
 
 | Topic             | Document                 |
 |-------------------|--------------------------|
-| Architecture      | docs/ARCHITECTURE.md     |
-| Database schema   | docs/SCHEMA.md           |
-| MCP tools         | docs/MCP_TOOLS.md        |
-| REST API          | docs/REST_API.md         |
-| WhatsApp quirks   | docs/WHATSAPP_QUIRKS.md  |
-| Design spec       | docs/specs/2026-04-02-wabridge-design.md (archived — historical reference only) |
+| Architecture      | docs/dev/ARCHITECTURE.md     |
+| Database schema   | docs/dev/SCHEMA.md           |
+| MCP tools         | docs/ops/MCP_TOOLS.md        |
+| REST API          | docs/ops/REST_API.md         |
+| WhatsApp quirks   | docs/dev/WHATSAPP_QUIRKS.md  |
+| Design spec       | docs/dev/specs/2026-04-02-wabridge-design.md (archived — historical reference only) |
 
 ## Project Layout
 

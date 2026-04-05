@@ -1,6 +1,6 @@
 # Store quoted message references
 
-**Status:** Done — see [design spec](../superpowers/specs/2026-04-05-quoted-message-references-design.md)
+**Status:** Done — see [design spec](../specs/2026-04-05-quoted-message-references-design.md)
 
 ## Problem
 

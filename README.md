@@ -88,16 +88,16 @@ docker compose run --rm -T mcp
 
 ## MCP Tools
 
-wabridge exposes 13 MCP tools for reading chats, contacts, and messages, and for sending messages and media. See [docs/MCP_TOOLS.md](docs/MCP_TOOLS.md) for the full parameter reference.
+wabridge exposes 13 MCP tools for reading chats, contacts, and messages, and for sending messages and media. See [docs/ops/MCP_TOOLS.md](docs/ops/MCP_TOOLS.md) for the full parameter reference.
 
 ## Documentation
 
-See [docs/](docs/) for detailed reference:
+See [docs/README.md](docs/README.md) for the full index.
 
 | Topic | Document |
 |-------|----------|
-| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Database schema | [docs/SCHEMA.md](docs/SCHEMA.md) |
-| MCP tools reference | [docs/MCP_TOOLS.md](docs/MCP_TOOLS.md) |
-| REST API | [docs/REST_API.md](docs/REST_API.md) |
-| WhatsApp quirks | [docs/WHATSAPP_QUIRKS.md](docs/WHATSAPP_QUIRKS.md) |
+| Architecture | [docs/dev/ARCHITECTURE.md](docs/dev/ARCHITECTURE.md) |
+| Database schema | [docs/dev/SCHEMA.md](docs/dev/SCHEMA.md) |
+| MCP tools reference | [docs/ops/MCP_TOOLS.md](docs/ops/MCP_TOOLS.md) |
+| REST API | [docs/ops/REST_API.md](docs/ops/REST_API.md) |
+| WhatsApp quirks | [docs/dev/WHATSAPP_QUIRKS.md](docs/dev/WHATSAPP_QUIRKS.md) |

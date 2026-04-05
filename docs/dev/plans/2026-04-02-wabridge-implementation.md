@@ -1,6 +1,6 @@
 # wabridge Implementation Plan
 
-> **Archived.** This implementation plan was used to build wabridge and is now complete. Checkboxes are left in their original state as a historical record. Do not use this as a guide for current development — refer to the reference docs ([ARCHITECTURE.md](../ARCHITECTURE.md), [SCHEMA.md](../SCHEMA.md), [MCP_TOOLS.md](../MCP_TOOLS.md), [REST_API.md](../REST_API.md)) instead.
+> **Archived.** This implementation plan was used to build wabridge and is now complete. Checkboxes are left in their original state as a historical record. Do not use this as a guide for current development — refer to the reference docs ([ARCHITECTURE.md](../ARCHITECTURE.md), [SCHEMA.md](../SCHEMA.md), [MCP_TOOLS.md](../../ops/MCP_TOOLS.md), [REST_API.md](../../ops/REST_API.md)) instead.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
