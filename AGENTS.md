@@ -21,8 +21,9 @@ mkdir -p "$WABRIDGE_DATA_DIR"
 docker compose up bridge           # persistent bridge
 docker compose run --rm -T mcp     # ephemeral MCP server
 
-# After code changes, rebuild with --no-cache to avoid stale binaries
+# After code changes, rebuild BOTH images and restart the bridge
 docker compose build --no-cache bridge mcp
+docker compose up -d bridge
 ```
 
 ## Documentation
