@@ -142,8 +142,10 @@ Download media from a stored message.
 
 **Response:**
 ```json
-{"success": true, "data": {"path": "/app/store/media/1234567890_s.whatsapp.net/photo.jpg"}}
+{"success": true, "data": {"path": "/data/media/1234567890_s.whatsapp.net/3EB0ABC123.jpg"}}
 ```
+
+The filename is the WhatsApp message ID plus the file extension. The media directory path depends on configuration (`--media-dir` flag or `WABRIDGE_DATA_DIR`).
 
 **Example:**
 ```bash

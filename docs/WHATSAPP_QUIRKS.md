@@ -66,6 +66,10 @@ The session database (`whatsapp.db`) must be kept separate from the application 
 
 Only media metadata is stored in SQLite (URL, media key, SHA-256 hashes, file length). Actual media bytes are downloaded on demand via whatsmeow's `client.Download()`. This keeps the database small and avoids downloading media the user never requests.
 
+### On-Disk Filenames
+
+Downloaded media is saved as `<messageID>.<ext>` (e.g., `3EB0ABC123.jpg`). WhatsApp message IDs are globally unique, so this eliminates filename collisions when multiple media messages share the same timestamp (common with album photos). The original filename from the sender is preserved in the database `filename` column for display purposes.
+
 ### Media Type Detection
 
 Detected from file extension at send time:
