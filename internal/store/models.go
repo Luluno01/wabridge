@@ -31,5 +31,9 @@ type Message struct {
 	FileSHA256    []byte    `gorm:"column:file_sha256" json:"-"`
 	FileEncSHA256 []byte    `gorm:"column:file_enc_sha256" json:"-"`
 	FileLength    *int64    `json:"file_length,omitempty"`
-	MentionedJIDs *string   `gorm:"column:mentioned_jids" json:"mentioned_jids,omitempty"`
+	MentionedJIDs   *string `gorm:"column:mentioned_jids" json:"mentioned_jids,omitempty"`
+	QuotedMessageID *string `gorm:"column:quoted_message_id" json:"quoted_message_id,omitempty"`
+	QuotedSender    *string `gorm:"column:quoted_sender" json:"quoted_sender,omitempty"`
+	QuotedContent   *string `gorm:"column:quoted_content" json:"quoted_content,omitempty"`
+	QuotedMediaType *string `gorm:"column:quoted_media_type" json:"quoted_media_type,omitempty"`
 }

@@ -48,6 +48,7 @@ func (s *Store) StoreMessage(msg *Message) error {
 			"media_type", "mime_type", "filename", "url",
 			"media_key", "file_sha256", "file_enc_sha256", "file_length",
 			"mentioned_jids",
+			"quoted_message_id", "quoted_sender", "quoted_content", "quoted_media_type",
 		}),
 	}).Create(msg).Error
 }

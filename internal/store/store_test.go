@@ -247,6 +247,65 @@ func TestListMessages(t *testing.T) {
 	assert.Len(t, results, 2)
 }
 
+func TestStoreMessage_QuotedFields(t *testing.T) {
+	s := newTestStore(t)
+
+	msg := &Message{
+		ID:              "reply1",
+		ChatJID:         "chat@g.us",
+		Sender:          "alice@s.whatsapp.net",
+		Content:         "I agree!",
+		Timestamp:       time.Now().Truncate(time.Second),
+		QuotedMessageID: strPtr("orig1"),
+		QuotedSender:    strPtr("bob@s.whatsapp.net"),
+		QuotedContent:   strPtr("What do you think?"),
+	}
+
+	err := s.StoreMessage(msg)
+	require.NoError(t, err)
+
+	got, err := s.GetMessage("reply1", "chat@g.us")
+	require.NoError(t, err)
+	require.NotNil(t, got.QuotedMessageID)
+	assert.Equal(t, "orig1", *got.QuotedMessageID)
+	require.NotNil(t, got.QuotedSender)
+	assert.Equal(t, "bob@s.whatsapp.net", *got.QuotedSender)
+	require.NotNil(t, got.QuotedContent)
+	assert.Equal(t, "What do you think?", *got.QuotedContent)
+	assert.Nil(t, got.QuotedMediaType)
+}
+
+func TestStoreMessage_QuotedFieldsUpsert(t *testing.T) {
+	s := newTestStore(t)
+
+	msg := &Message{
+		ID:        "reply1",
+		ChatJID:   "chat@g.us",
+		Sender:    "alice@s.whatsapp.net",
+		Content:   "I agree!",
+		Timestamp: time.Now().Truncate(time.Second),
+	}
+	require.NoError(t, s.StoreMessage(msg))
+
+	// Re-store with quoted fields populated (simulates re-sync)
+	msg.QuotedMessageID = strPtr("orig1")
+	msg.QuotedSender = strPtr("bob@s.whatsapp.net")
+	msg.QuotedContent = strPtr("What do you think?")
+	msg.QuotedMediaType = strPtr("image")
+	require.NoError(t, s.StoreMessage(msg))
+
+	got, err := s.GetMessage("reply1", "chat@g.us")
+	require.NoError(t, err)
+	require.NotNil(t, got.QuotedMessageID)
+	assert.Equal(t, "orig1", *got.QuotedMessageID)
+	require.NotNil(t, got.QuotedSender)
+	assert.Equal(t, "bob@s.whatsapp.net", *got.QuotedSender)
+	require.NotNil(t, got.QuotedContent)
+	assert.Equal(t, "What do you think?", *got.QuotedContent)
+	require.NotNil(t, got.QuotedMediaType)
+	assert.Equal(t, "image", *got.QuotedMediaType)
+}
+
 func TestGetMessageContext(t *testing.T) {
 	s := newTestStore(t)
 	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
