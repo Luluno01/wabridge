@@ -33,6 +33,10 @@ docker compose run --rm -T mcp     # ephemeral MCP server
 | WhatsApp quirks   | docs/dev/WHATSAPP_QUIRKS.md  |
 | Design spec       | docs/dev/specs/2026-04-02-wabridge-design.md (archived — historical reference only) |
 
+## Documentation Maintenance
+
+When updating docs, follow the principles in [docs/README.md](docs/README.md#documentation-principles). In short: specs are source of truth, update them after implementation, cross-reference related docs, and keep ops/dev separation.
+
 ## Project Layout
 
 ```
