@@ -20,6 +20,9 @@ cp .env.example .env               # edit WABRIDGE_DATA_DIR, UID, GID
 mkdir -p "$WABRIDGE_DATA_DIR"
 docker compose up bridge           # persistent bridge
 docker compose run --rm -T mcp     # ephemeral MCP server
+
+# After code changes, rebuild with --no-cache to avoid stale binaries
+docker compose build --no-cache bridge mcp
 ```
 
 ## Documentation

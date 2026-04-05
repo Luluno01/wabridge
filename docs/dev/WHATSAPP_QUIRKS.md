@@ -32,6 +32,10 @@ This converts raw `WebMessageInfo` protobuf into a proper `events.Message` with 
 2. Each event contains conversation batches, each with messages as `WebMessageInfo` protobufs
 3. Process each message through `ParseWebMessage` (see above)
 
+### ContextInfo in History Sync
+
+History sync messages retain `ContextInfo`, including reply metadata (`stanzaID`, `participant`, `quotedMessage`) and `mentionedJID`. This means quoted message references and @mentions are populated for synced messages, not just real-time ones.
+
 ### Completion Detection
 
 History sync arrives in multiple batches with no explicit "done" signal. Detect completion by waiting for a settling period (e.g., 15 seconds with no new events).
