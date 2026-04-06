@@ -6,6 +6,8 @@ services:
       - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
       - --session-db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/whatsapp.db
       - --media-dir=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/media
+      - --access-level=${WABRIDGE_ACCESS_LEVEL:-3}
+      - --features=${WABRIDGE_FEATURES:-}
     restart: unless-stopped
     user: "${WABRIDGE_UID:-1000}:${WABRIDGE_GID:-1000}"
     volumes:
@@ -19,6 +21,8 @@ services:
       - mcp
       - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
       - --bridge-url=http://bridge:8080
+      - --access-level=${WABRIDGE_ACCESS_LEVEL:-3}
+      - --features=${WABRIDGE_FEATURES:-}
     stdin_open: true
     user: "${WABRIDGE_UID:-1000}:${WABRIDGE_GID:-1000}"
     volumes:
@@ -37,6 +41,8 @@ services:
       - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
       - --session-db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/whatsapp.db
       - --media-dir=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/media
+      - --access-level=${WABRIDGE_ACCESS_LEVEL:-3}
+      - --features=${WABRIDGE_FEATURES:-}
     stdin_open: true
     user: "${WABRIDGE_UID:-1000}:${WABRIDGE_GID:-1000}"
     volumes:
