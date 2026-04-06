@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"wabridge/internal/api"
+	"wabridge/internal/feature"
 	"wabridge/internal/mcp"
 	"wabridge/internal/store"
 )
@@ -24,19 +25,20 @@ func init() {
 }
 
 func runMCP(cmd *cobra.Command, args []string) error {
-	// Open application store (read-only queries)
+	localCfg, err := feature.NewConfig(accessLevel, features)
+	if err != nil {
+		return err
+	}
+
 	appStore, err := store.New(dbPath)
 	if err != nil {
 		return fmt.Errorf("failed to open app store: %w", err)
 	}
 	defer appStore.Close()
 
-	// Create API client as the action backend
 	apiClient := api.NewAPIClient(bridgeURL)
 
-	// Create MCP server
-	mcpServer := mcp.NewServer(appStore, apiClient)
-
-	// Serve MCP over stdio (blocks)
+	// TODO: pull feature config from bridge and intersect (Task 4)
+	mcpServer := mcp.NewServer(appStore, apiClient, localCfg)
 	return mcpServer.ServeStdio()
 }

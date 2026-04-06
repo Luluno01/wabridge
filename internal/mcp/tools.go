@@ -40,8 +40,10 @@ func (s *Server) resolveMessages(messages []store.MessageResult, raw bool) {
 	}
 }
 
-// registerTools registers all 13 MCP tools on the server.
+// registerTools registers MCP tools on the server.
+// Query tools are always registered. Action tools are gated by feature config.
 func (s *Server) registerTools() {
+	// Query tools — always registered
 	s.registerSearchContacts()
 	s.registerListChats()
 	s.registerGetChat()
@@ -50,11 +52,19 @@ func (s *Server) registerTools() {
 	s.registerListMessages()
 	s.registerGetLastInteraction()
 	s.registerGetMessageContext()
-	s.registerSendMessage()
-	s.registerSendFile()
-	s.registerSendAudioMessage()
-	s.registerDownloadMedia()
-	s.registerRequestHistorySync()
+
+	// Action tools — conditional
+	if s.features.Send {
+		s.registerSendMessage()
+		s.registerSendFile()
+		s.registerSendAudioMessage()
+	}
+	if s.features.Download {
+		s.registerDownloadMedia()
+	}
+	if s.features.HistorySync {
+		s.registerRequestHistorySync()
+	}
 }
 
 // --- Query tools ---
