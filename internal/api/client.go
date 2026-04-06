@@ -87,23 +87,21 @@ func (c *APIClient) DownloadMedia(ctx context.Context, messageID, chatJID string
 
 // GetFeatures fetches the bridge's feature config from GET /api/features.
 func (c *APIClient) GetFeatures() (feature.Config, error) {
-	resp, err := c.HTTPClient.Get(c.BaseURL + "/api/features")
+	resp, err := c.doGet("/api/features")
 	if err != nil {
-		return feature.Config{}, fmt.Errorf("get features: %w", err)
+		return feature.Config{}, err
 	}
-	defer resp.Body.Close()
 
-	var apiResp struct {
-		Success bool           `json:"success"`
-		Data    feature.Config `json:"data"`
+	// Re-marshal Data (map[string]any after JSON round-trip) into feature.Config.
+	raw, err := json.Marshal(resp.Data)
+	if err != nil {
+		return feature.Config{}, fmt.Errorf("re-marshal features data: %w", err)
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return feature.Config{}, fmt.Errorf("decode features response: %w", err)
+	var cfg feature.Config
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return feature.Config{}, fmt.Errorf("decode features data: %w", err)
 	}
-	if !apiResp.Success {
-		return feature.Config{}, fmt.Errorf("features endpoint returned success=false")
-	}
-	return apiResp.Data, nil
+	return cfg, nil
 }
 
 func (c *APIClient) RequestHistorySync(ctx context.Context, chatJID string) error {
@@ -112,6 +110,31 @@ func (c *APIClient) RequestHistorySync(ctx context.Context, chatJID string) erro
 	}
 	_, err := c.doPost(ctx, "/api/sync-history", body)
 	return err
+}
+
+// doGet sends a GET request and returns the decoded apiResponse.
+func (c *APIClient) doGet(path string) (*apiResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, c.BaseURL+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http request to %s: %w", path, err)
+	}
+	defer resp.Body.Close()
+
+	var apiResp apiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("decode response from %s: %w", path, err)
+	}
+
+	if !apiResp.Success {
+		return nil, fmt.Errorf("api error from %s: %s", path, apiResp.Message)
+	}
+
+	return &apiResp, nil
 }
 
 // doPost sends a POST request with an optional JSON body and returns the
