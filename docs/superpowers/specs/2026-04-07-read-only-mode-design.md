@@ -124,6 +124,12 @@ Both `WABRIDGE_ACCESS_LEVEL` and `WABRIDGE_FEATURES` are added to `.env.example`
 | `internal/api/server_test.go` | Extend with tests for feature-gated routes |
 | `.env.example` | Add `WABRIDGE_ACCESS_LEVEL` and `WABRIDGE_FEATURES` |
 | `docker-compose.yml` | Pass through the new env vars |
+| `docs/ops/MCP_TOOLS.md` | Add section mapping tools to access levels |
+| `docs/ops/REST_API.md` | Document `GET /api/features` endpoint; note routes gated by access level |
+| `docs/ops/AUTOMATION_SAFETY.md` | Replace "read-only mode once available" placeholder with actual guidance |
+| `docs/ops/GETTING_STARTED.md` | Add access level configuration to each mode's setup section |
+| `docs/dev/ARCHITECTURE.md` | Document `feature.Config` flow through the system |
+| `docs/ops/COOKBOOK.md` | Note which recipes require which access levels |
 
 ## Testing
 
