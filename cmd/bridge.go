@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"wabridge/internal/api"
+	"wabridge/internal/feature"
 )
 
 var (
@@ -29,6 +30,11 @@ func init() {
 }
 
 func runBridge(cmd *cobra.Command, args []string) error {
+	featureCfg, err := feature.NewConfig(accessLevel, features)
+	if err != nil {
+		return err
+	}
+
 	rt, err := newRuntime(bridgeSessionDB, bridgeMediaDir)
 	if err != nil {
 		return err
@@ -37,7 +43,7 @@ func runBridge(cmd *cobra.Command, args []string) error {
 
 	rt.handleShutdown()
 
-	apiServer := api.NewAPIServer(rt.Backend, bridgeAddr)
+	apiServer := api.NewAPIServer(rt.Backend, bridgeAddr, featureCfg)
 	fmt.Fprintf(os.Stderr, "Bridge listening on %s\n", bridgeAddr)
 	return apiServer.Start()
 }

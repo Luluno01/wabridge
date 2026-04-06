@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"wabridge/internal/feature"
 )
 
 // mockBackend implements action.Backend for testing.
@@ -64,7 +66,7 @@ func (m *mockBackend) RequestHistorySync(_ context.Context, chatJID string) erro
 }
 
 func newTestServer(backend *mockBackend) *APIServer {
-	return NewAPIServer(backend, ":0")
+	return NewAPIServer(backend, ":0", feature.Config{Send: true, Download: true, HistorySync: true})
 }
 
 func doRequest(t *testing.T, s *APIServer, method, path string, body any) *httptest.ResponseRecorder {

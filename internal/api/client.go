@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"wabridge/internal/action"
+	"wabridge/internal/feature"
 )
 
 // APIClient implements action.Backend by making HTTP requests to the bridge's
@@ -82,6 +83,27 @@ func (c *APIClient) DownloadMedia(ctx context.Context, messageID, chatJID string
 		return "", fmt.Errorf("missing or invalid 'path' in response data")
 	}
 	return path, nil
+}
+
+// GetFeatures fetches the bridge's feature config from GET /api/features.
+func (c *APIClient) GetFeatures() (feature.Config, error) {
+	resp, err := c.HTTPClient.Get(c.BaseURL + "/api/features")
+	if err != nil {
+		return feature.Config{}, fmt.Errorf("get features: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var apiResp struct {
+		Success bool           `json:"success"`
+		Data    feature.Config `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return feature.Config{}, fmt.Errorf("decode features response: %w", err)
+	}
+	if !apiResp.Success {
+		return feature.Config{}, fmt.Errorf("features endpoint returned success=false")
+	}
+	return apiResp.Data, nil
 }
 
 func (c *APIClient) RequestHistorySync(ctx context.Context, chatJID string) error {

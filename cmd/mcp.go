@@ -38,7 +38,14 @@ func runMCP(cmd *cobra.Command, args []string) error {
 
 	apiClient := api.NewAPIClient(bridgeURL)
 
-	// TODO: pull feature config from bridge and intersect (Task 4)
-	mcpServer := mcp.NewServer(appStore, apiClient, localCfg)
+	// Pull feature config from the bridge and intersect with local config.
+	// On failure (bridge unreachable), fall back to local config only.
+	remoteCfg, err := apiClient.GetFeatures()
+	effectiveCfg := localCfg
+	if err == nil {
+		effectiveCfg = feature.Intersect(remoteCfg, localCfg)
+	}
+
+	mcpServer := mcp.NewServer(appStore, apiClient, effectiveCfg)
 	return mcpServer.ServeStdio()
 }

@@ -6,21 +6,24 @@ import (
 	"net/http"
 
 	"wabridge/internal/action"
+	"wabridge/internal/feature"
 )
 
 // APIServer exposes a REST API that proxies actions to an action.Backend.
 // It is used in bridge mode so that a separate MCP client process can
 // send WhatsApp actions over HTTP.
 type APIServer struct {
-	backend action.Backend
-	addr    string
+	backend  action.Backend
+	addr     string
+	features feature.Config
 }
 
 // NewAPIServer creates a new APIServer bound to the given address.
-func NewAPIServer(backend action.Backend, addr string) *APIServer {
+func NewAPIServer(backend action.Backend, addr string, features feature.Config) *APIServer {
 	return &APIServer{
-		backend: backend,
-		addr:    addr,
+		backend:  backend,
+		addr:     addr,
+		features: features,
 	}
 }
 
@@ -28,11 +31,19 @@ func NewAPIServer(backend action.Backend, addr string) *APIServer {
 func (s *APIServer) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", s.handleHealth)
-	mux.HandleFunc("POST /api/send", s.handleSend)
-	mux.HandleFunc("POST /api/send-file", s.handleSendFile)
-	mux.HandleFunc("POST /api/send-audio", s.handleSendAudio)
-	mux.HandleFunc("POST /api/download", s.handleDownload)
-	mux.HandleFunc("POST /api/sync-history", s.handleSyncHistory)
+	mux.HandleFunc("GET /api/features", s.handleFeatures)
+
+	if s.features.Send {
+		mux.HandleFunc("POST /api/send", s.handleSend)
+		mux.HandleFunc("POST /api/send-file", s.handleSendFile)
+		mux.HandleFunc("POST /api/send-audio", s.handleSendAudio)
+	}
+	if s.features.Download {
+		mux.HandleFunc("POST /api/download", s.handleDownload)
+	}
+	if s.features.HistorySync {
+		mux.HandleFunc("POST /api/sync-history", s.handleSyncHistory)
+	}
 	return mux
 }
 
@@ -54,6 +65,13 @@ func (s *APIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, apiResponse{
 		Success: true,
 		Message: "ok",
+	})
+}
+
+func (s *APIServer) handleFeatures(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, apiResponse{
+		Success: true,
+		Data:    s.features,
 	})
 }
 
