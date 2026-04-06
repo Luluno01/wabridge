@@ -86,6 +86,8 @@ Narrow by chat and time:
 list_messages(chat_jid: "120363012345678901@g.us", search: "deadline", after: "2026-04-01T00:00:00Z")
 ```
 
+> **Note:** The following recipes require specific access levels. `download_media` needs level 1+, `request_history_sync` needs level 2+, and send tools need level 3 (full access). See [MCP_TOOLS.md](MCP_TOOLS.md#access-levels).
+
 ## Download Media
 
 When a message contains media (image, video, audio, document), the message object includes `media_type` and `filename` fields but the actual file is not stored locally until you download it.

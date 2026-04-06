@@ -23,7 +23,7 @@ WhatsApp does not publish official rate limits for linked devices. What is known
 
 - **Do not use wabridge for bulk messaging or spam.** This violates WhatsApp's Terms of Service and will get your account banned.
 - **Add delays between sends** in automation scripts. A few seconds between messages is a reasonable baseline.
-- **Prefer reading over writing.** If your automation only needs to read messages (e.g., daily briefings, monitoring), consider running in read-only mode once available (see [backlog](../dev/backlogs/2026-04-06-read-only-mode.md)), or simply avoid calling send tools.
+- **Use read-only mode for read-only workloads.** If your automation only needs to read messages (e.g., daily briefings, monitoring), set `--access-level=0`. This prevents all action tools from being registered. For read + media download, use `--access-level=1`. See [MCP_TOOLS.md](MCP_TOOLS.md#access-levels) for the full level table.
 - **Test with your own account first.** Don't deploy automation against important accounts without testing the pattern.
 - **Monitor for disconnections.** If WhatsApp blocks your linked device, the bridge will log a `Device logged out` warning. Set up log monitoring if running unattended.
 

@@ -69,6 +69,14 @@ Add this to your MCP client configuration (e.g., Claude Desktop, Claude Code):
 }
 ```
 
+**Optional: restrict access level.** To run in read-only mode (no action tools):
+
+```bash
+./wabridge bridge --access-level=0
+```
+
+See [MCP_TOOLS.md](MCP_TOOLS.md#access-levels) for access level details and per-feature overrides.
+
 The `--db` path must point to the same database the bridge writes to. The `--bridge-url` must reach the bridge's REST API (default `:8080`).
 
 ### 4. Verify
@@ -114,6 +122,14 @@ Same QR code flow as bridge mode — scan with your phone. Once paired, press Ct
 }
 ```
 
+**Optional: restrict access level.** To run in read-only mode:
+
+```bash
+./wabridge standalone --access-level=0
+```
+
+See [MCP_TOOLS.md](MCP_TOOLS.md#access-levels) for access level details and per-feature overrides.
+
 Use absolute paths for `--db` and `--session-db` — without them, the defaults are relative paths that resolve to whatever working directory the MCP client uses.
 
 In standalone mode, the MCP client starts and stops the process. WhatsApp messages are only received while the process is running.
@@ -137,6 +153,8 @@ Create the data directory:
 ```bash
 mkdir -p "$WABRIDGE_DATA_DIR"
 ```
+
+**Optional: restrict access level.** Set `WABRIDGE_ACCESS_LEVEL=0` in `.env` for read-only mode. See [MCP_TOOLS.md](MCP_TOOLS.md#access-levels).
 
 ### 2. Start the bridge
 

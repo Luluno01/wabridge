@@ -10,6 +10,12 @@ On error, `success` is `false` and `message` contains the error description.
 
 ---
 
+## Access Levels
+
+Action endpoints can be disabled at startup using the `--access-level` flag. Disabled endpoints are not registered and return 404. The health and features endpoints are always available. See [MCP_TOOLS.md](MCP_TOOLS.md#access-levels) for the level table.
+
+---
+
 ## Endpoints
 
 ### GET /health
@@ -26,6 +32,24 @@ Health check.
 **Example:**
 ```bash
 curl http://localhost:8080/health
+```
+
+---
+
+### GET /api/features
+
+Returns the bridge's current feature configuration. Always available (not gated by access level). Used by the `mcp` subcommand to pull the bridge's feature flags at startup.
+
+**Request:** no body.
+
+**Response:**
+```json
+{"success": true, "data": {"send": true, "download": true, "history_sync": true}}
+```
+
+**Example:**
+```bash
+curl http://localhost:8080/api/features
 ```
 
 ---

@@ -6,6 +6,23 @@ All query tools that return messages resolve @mentions and contact names automat
 
 ---
 
+## Access Levels
+
+Action tools can be disabled at startup using the `--access-level` flag. Query tools are always available.
+
+| Level | Available Action Tools |
+|-------|-----------------------|
+| 0 | None (read-only) |
+| 1 | `download_media` |
+| 2 | `download_media`, `request_history_sync` |
+| 3 | All action tools (default) |
+
+Per-feature overrides (`--features=+download,-send`) can grant or revoke individual tools on top of the preset. See [GETTING_STARTED.md](GETTING_STARTED.md) for configuration.
+
+Disabled tools are not registered — they do not appear in the tool list.
+
+---
+
 ## Query Tools
 
 ### search_contacts

@@ -65,7 +65,7 @@ Both processes mount the same SQLite database. Queries (list chats, search messa
 
 ```
 cmd/
-  root.go          Cobra root command, global flags (--db, --log-level)
+  root.go          Cobra root command, global flags (--db, --log-level, --access-level, --features)
   runtime.go       Shared startup: newRuntime (store + whatsapp + backend), signal handling
   standalone.go    Wires runtime + mcp.Server
   bridge.go        Wires runtime + api.APIServer
@@ -73,6 +73,7 @@ cmd/
 
 internal/
   action/          Backend interface — abstracts actions requiring a live WhatsApp connection
+  feature/         Access level presets and per-feature override parsing
   store/           GORM-backed SQLite: models, migrations, queries
   whatsapp/        whatsmeow wrapper: connection, event handlers, media utils
   mcp/             MCP server, tool registration, DirectBackend (implements action.Backend)
