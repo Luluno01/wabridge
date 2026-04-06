@@ -372,12 +372,17 @@ func (s *Server) registerDownloadMedia() {
 
 func (s *Server) registerRequestHistorySync() {
 	tool := mcplib.NewTool("request_history_sync",
-		mcplib.WithDescription("Request additional message history from the primary device"),
+		mcplib.WithDescription("Request additional message history from the primary device for a specific chat"),
+		mcplib.WithString("chat_jid", mcplib.Required(), mcplib.Description("JID of the chat to request older history for")),
 	)
 	s.mcp.AddTool(tool, func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
-		if err := s.backend.RequestHistorySync(ctx); err != nil {
+		chatJID, err := req.RequireString("chat_jid")
+		if err != nil {
+			return nil, err
+		}
+		if err := s.backend.RequestHistorySync(ctx, chatJID); err != nil {
 			return nil, fmt.Errorf("request history sync: %w", err)
 		}
-		return mcplib.NewToolResultText("history sync requested"), nil
+		return mcplib.NewToolResultText("history sync requested for " + chatJID), nil
 	})
 }

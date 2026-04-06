@@ -40,17 +40,9 @@ History sync messages retain `ContextInfo`, including reply metadata (`stanzaID`
 
 History sync arrives in multiple batches with no explicit "done" signal. Detect completion by waiting for a settling period (e.g., 15 seconds with no new events).
 
-### BuildHistorySyncRequest Panics
+### BuildHistorySyncRequest Requires a Valid Cursor
 
-`client.BuildHistorySyncRequest()` can panic with certain account states. Always wrap in panic recovery:
-
-```go
-defer func() {
-    if r := recover(); r != nil {
-        log.Errorf("panic in BuildHistorySyncRequest: %v", r)
-    }
-}()
-```
+`client.BuildHistorySyncRequest(messageInfo, count)` dereferences `messageInfo` immediately (accessing `.Chat`, `.ID`, `.IsFromMe`, `.Timestamp`) with no nil check. Passing `nil` causes a guaranteed panic. Always pass a `*types.MessageInfo` constructed from a real stored message.
 
 In practice, this method does not reliably fetch history beyond the initial automatic sync. Older messages require the user to scroll in the WhatsApp mobile app.
 

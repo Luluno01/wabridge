@@ -199,7 +199,26 @@ func (s *APIServer) handleDownload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleSyncHistory(w http.ResponseWriter, r *http.Request) {
-	if err := s.backend.RequestHistorySync(r.Context()); err != nil {
+	var req struct {
+		ChatJID string `json:"chat_jid"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: fmt.Sprintf("invalid request: %v", err),
+		})
+		return
+	}
+
+	if req.ChatJID == "" {
+		writeJSON(w, http.StatusBadRequest, apiResponse{
+			Success: false,
+			Message: "chat_jid is required",
+		})
+		return
+	}
+
+	if err := s.backend.RequestHistorySync(r.Context(), req.ChatJID); err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiResponse{
 			Success: false,
 			Message: fmt.Sprintf("failed to request history sync: %v", err),

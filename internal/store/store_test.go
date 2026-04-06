@@ -364,3 +364,50 @@ func TestGetMessageContext(t *testing.T) {
 	assert.Equal(t, "Message 3", results[0].Content)
 	assert.Equal(t, "Message 7", results[4].Content)
 }
+
+func TestGetOldestMessage(t *testing.T) {
+	s := newTestStore(t)
+	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+
+	for i := 0; i < 5; i++ {
+		s.StoreMessage(&Message{
+			ID:        fmt.Sprintf("msg%d", i),
+			ChatJID:   "chat@g.us",
+			Sender:    "alice@s.whatsapp.net",
+			Content:   fmt.Sprintf("Message %d", i),
+			Timestamp: base.Add(time.Duration(i) * time.Minute),
+			IsFromMe:  i%2 == 0,
+		})
+	}
+
+	msg, err := s.GetOldestMessage("chat@g.us")
+	require.NoError(t, err)
+	assert.Equal(t, "msg0", msg.ID)
+	assert.Equal(t, "chat@g.us", msg.ChatJID)
+	assert.True(t, msg.IsFromMe)
+}
+
+func TestGetOldestMessage_IsolatedByChat(t *testing.T) {
+	s := newTestStore(t)
+	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+
+	s.StoreMessage(&Message{
+		ID: "older", ChatJID: "chat-a@g.us", Sender: "alice@s.whatsapp.net",
+		Content: "older in A", Timestamp: base,
+	})
+	s.StoreMessage(&Message{
+		ID: "newer", ChatJID: "chat-b@g.us", Sender: "bob@s.whatsapp.net",
+		Content: "newer in B", Timestamp: base.Add(time.Hour),
+	})
+
+	msg, err := s.GetOldestMessage("chat-b@g.us")
+	require.NoError(t, err)
+	assert.Equal(t, "newer", msg.ID)
+	assert.Equal(t, "chat-b@g.us", msg.ChatJID)
+}
+
+func TestGetOldestMessage_NotFound(t *testing.T) {
+	s := newTestStore(t)
+	_, err := s.GetOldestMessage("nonexistent@g.us")
+	assert.Error(t, err)
+}

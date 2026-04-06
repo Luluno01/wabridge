@@ -57,8 +57,9 @@ func (m *mockBackend) DownloadMedia(_ context.Context, messageID, chatJID string
 	return m.downloadMediaPath, m.err
 }
 
-func (m *mockBackend) RequestHistorySync(_ context.Context) error {
+func (m *mockBackend) RequestHistorySync(_ context.Context, chatJID string) error {
 	m.historySyncCalled = true
+	m.lastChatJID = chatJID
 	return m.err
 }
 
@@ -292,20 +293,49 @@ func TestSyncHistory_Success(t *testing.T) {
 	backend := &mockBackend{}
 	srv := newTestServer(backend)
 
-	rr := doRequest(t, srv, "POST", "/api/sync-history", nil)
+	rr := doRequest(t, srv, "POST", "/api/sync-history", map[string]string{
+		"chat_jid": "group@g.us",
+	})
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 	resp := parseResponse(t, rr)
 	assert.True(t, resp.Success)
 	assert.Equal(t, "history sync requested", resp.Message)
 	assert.True(t, backend.historySyncCalled)
+	assert.Equal(t, "group@g.us", backend.lastChatJID)
+}
+
+func TestSyncHistory_MissingChatJID(t *testing.T) {
+	backend := &mockBackend{}
+	srv := newTestServer(backend)
+
+	rr := doRequest(t, srv, "POST", "/api/sync-history", map[string]string{})
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	resp := parseResponse(t, rr)
+	assert.False(t, resp.Success)
+	assert.False(t, backend.historySyncCalled)
+}
+
+func TestSyncHistory_NilBody(t *testing.T) {
+	backend := &mockBackend{}
+	srv := newTestServer(backend)
+
+	rr := doRequest(t, srv, "POST", "/api/sync-history", nil)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	resp := parseResponse(t, rr)
+	assert.False(t, resp.Success)
+	assert.False(t, backend.historySyncCalled)
 }
 
 func TestSyncHistory_BackendError(t *testing.T) {
 	backend := &mockBackend{err: fmt.Errorf("client not ready")}
 	srv := newTestServer(backend)
 
-	rr := doRequest(t, srv, "POST", "/api/sync-history", nil)
+	rr := doRequest(t, srv, "POST", "/api/sync-history", map[string]string{
+		"chat_jid": "group@g.us",
+	})
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	resp := parseResponse(t, rr)

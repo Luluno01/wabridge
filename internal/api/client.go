@@ -84,8 +84,11 @@ func (c *APIClient) DownloadMedia(ctx context.Context, messageID, chatJID string
 	return path, nil
 }
 
-func (c *APIClient) RequestHistorySync(ctx context.Context) error {
-	_, err := c.doPost(ctx, "/api/sync-history", nil)
+func (c *APIClient) RequestHistorySync(ctx context.Context, chatJID string) error {
+	body := map[string]string{
+		"chat_jid": chatJID,
+	}
+	_, err := c.doPost(ctx, "/api/sync-history", body)
 	return err
 }
 

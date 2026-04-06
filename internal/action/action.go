@@ -10,5 +10,5 @@ type Backend interface {
 	SendFile(ctx context.Context, recipient, filePath string) error
 	SendAudioMessage(ctx context.Context, recipient, filePath string) error
 	DownloadMedia(ctx context.Context, messageID, chatJID string) (string, error)
-	RequestHistorySync(ctx context.Context) error
+	RequestHistorySync(ctx context.Context, chatJID string) error
 }

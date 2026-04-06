@@ -156,10 +156,12 @@ Returns: path to the downloaded file on disk.
 
 ### request_history_sync
 
-Request additional message history from the primary WhatsApp device.
+Request additional message history from the primary WhatsApp device for a specific chat. Uses the oldest stored message in the chat as the cursor.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| _(none)_ | | | |
+| `chat_jid` | string | yes | JID of the chat to request older history for |
 
-Returns: confirmation text. History arrives asynchronously via WhatsApp events.
+Returns: confirmation text. History arrives asynchronously via WhatsApp events. Requires at least one stored message in the target chat to build a valid cursor.
+
+**Limitation:** This uses WhatsApp's `HISTORY_SYNC_ON_DEMAND` peer message, which asks the primary phone to send older messages. The phone can ignore or decline the request, and in practice it rarely responds. This is a known issue across WhatsApp libraries (not specific to wabridge). The most reliable way to get message history is the initial sync that happens automatically when pairing the device. To re-sync, unlink and re-pair.

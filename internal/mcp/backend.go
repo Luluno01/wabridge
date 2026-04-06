@@ -164,31 +164,34 @@ func (b *DirectBackend) DownloadMedia(ctx context.Context, messageID, chatJID st
 	return b.Client.DownloadMedia(ctx, msg, outputDir)
 }
 
-// RequestHistorySync requests additional history from the user's primary
-// device. The response arrives asynchronously as HistorySync events.
-// This method wraps BuildHistorySyncRequest with panic recovery since
-// it can panic if internal client state is incomplete.
-func (b *DirectBackend) RequestHistorySync(ctx context.Context) error {
-	var historyMsg *waE2E.Message
-	var panicErr error
-
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				panicErr = fmt.Errorf("panic in BuildHistorySyncRequest: %v", r)
-			}
-		}()
-		historyMsg = b.Client.WAClient.BuildHistorySyncRequest(nil, 100)
-	}()
-
-	if panicErr != nil {
-		return panicErr
-	}
-	if historyMsg == nil {
-		return fmt.Errorf("failed to build history sync request: client state may not be ready")
+// RequestHistorySync requests additional history for a specific chat from the
+// user's primary device. It looks up the oldest stored message in the chat to
+// use as the cursor for BuildHistorySyncRequest. The response arrives
+// asynchronously as HistorySync events.
+func (b *DirectBackend) RequestHistorySync(ctx context.Context, chatJID string) error {
+	jid, err := types.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID %q: %w", chatJID, err)
 	}
 
-	_, err := b.Client.WAClient.SendPeerMessage(ctx, historyMsg)
+	msg, err := b.Store.GetOldestMessage(chatJID)
+	if err != nil {
+		return fmt.Errorf("no messages found for chat %s: %w", chatJID, err)
+	}
+
+	cursor := &types.MessageInfo{
+		MessageSource: types.MessageSource{
+			Chat:     jid,
+			IsFromMe: msg.IsFromMe,
+		},
+		ID:        msg.ID,
+		Timestamp: msg.Timestamp,
+	}
+
+	const historySyncBatchSize = 100
+	historyMsg := b.Client.WAClient.BuildHistorySyncRequest(cursor, historySyncBatchSize)
+
+	_, err = b.Client.WAClient.SendPeerMessage(ctx, historyMsg)
 	if err != nil {
 		return fmt.Errorf("failed to send history sync request: %w", err)
 	}

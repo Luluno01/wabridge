@@ -114,6 +114,15 @@ func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 	return results, query.Scan(&results).Error
 }
 
+func (s *Store) GetOldestMessage(chatJID string) (*Message, error) {
+	var msg Message
+	if err := s.db.Select("id, chat_jid, is_from_me, timestamp").
+		Where("chat_jid = ?", chatJID).Order("timestamp ASC").First(&msg).Error; err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}
+
 func (s *Store) GetMessageContext(id, chatJID string, beforeCount, afterCount int) ([]MessageResult, error) {
 	var target Message
 	if err := s.db.Where("id = ? AND chat_jid = ?", id, chatJID).First(&target).Error; err != nil {
