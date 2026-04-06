@@ -355,3 +355,93 @@ func TestResponseContentType(t *testing.T) {
 
 	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
 }
+
+// --- Feature Gating ---------------------------------------------------------
+
+func TestFeatureGating_Level0_SendReturns404(t *testing.T) {
+	backend := &mockBackend{}
+	srv := NewAPIServer(backend, ":0", feature.Config{})
+
+	rr := doRequest(t, srv, "POST", "/api/send", map[string]string{
+		"recipient": "1234567890@s.whatsapp.net",
+		"message":   "hello",
+	})
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	assert.False(t, backend.sendMessageCalled)
+}
+
+func TestFeatureGating_Level0_DownloadReturns404(t *testing.T) {
+	backend := &mockBackend{}
+	srv := NewAPIServer(backend, ":0", feature.Config{})
+
+	rr := doRequest(t, srv, "POST", "/api/download", map[string]string{
+		"message_id": "msg-123",
+		"chat_jid":   "1234567890@s.whatsapp.net",
+	})
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	assert.False(t, backend.downloadMediaCalled)
+}
+
+func TestFeatureGating_Level0_SyncHistoryReturns404(t *testing.T) {
+	backend := &mockBackend{}
+	srv := NewAPIServer(backend, ":0", feature.Config{})
+
+	rr := doRequest(t, srv, "POST", "/api/sync-history", map[string]string{
+		"chat_jid": "group@g.us",
+	})
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	assert.False(t, backend.historySyncCalled)
+}
+
+func TestFeatureGating_Level0_HealthStillWorks(t *testing.T) {
+	backend := &mockBackend{}
+	srv := NewAPIServer(backend, ":0", feature.Config{})
+
+	rr := doRequest(t, srv, "GET", "/health", nil)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	resp := parseResponse(t, rr)
+	assert.True(t, resp.Success)
+}
+
+func TestFeatureGating_Level0_FeaturesEndpointWorks(t *testing.T) {
+	backend := &mockBackend{}
+	cfg := feature.Config{}
+	srv := NewAPIServer(backend, ":0", cfg)
+
+	rr := doRequest(t, srv, "GET", "/api/features", nil)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	resp := parseResponse(t, rr)
+	assert.True(t, resp.Success)
+
+	// Verify the returned config matches what was set
+	data, ok := resp.Data.(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, false, data["send"])
+	assert.Equal(t, false, data["download"])
+	assert.Equal(t, false, data["history_sync"])
+}
+
+func TestFeatureGating_DownloadOnlyEnabled(t *testing.T) {
+	backend := &mockBackend{downloadMediaPath: "/media/photo.jpg"}
+	srv := NewAPIServer(backend, ":0", feature.Config{Download: true})
+
+	// download should work
+	rr := doRequest(t, srv, "POST", "/api/download", map[string]string{
+		"message_id": "msg-123",
+		"chat_jid":   "1234567890@s.whatsapp.net",
+	})
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.True(t, backend.downloadMediaCalled)
+
+	// send should 404
+	rr = doRequest(t, srv, "POST", "/api/send", map[string]string{
+		"recipient": "1234567890@s.whatsapp.net",
+		"message":   "hello",
+	})
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+}
