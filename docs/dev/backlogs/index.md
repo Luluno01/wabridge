@@ -11,4 +11,5 @@ Feature ideas and improvements for future implementation.
 | [Grouped message ID](2026-04-04-grouped-message-id.md) | Store `ContextInfo.GroupedMessageID` so consumers can associate album photos as a batch |
 | [Unicode search normalization](2026-04-04-unicode-search-normalization.md) | Normalize smart quotes to ASCII so message search matches regardless of quote style |
 | [FULL_HISTORY_SYNC_ON_DEMAND](2026-04-06-full-history-sync-on-demand.md) | Investigate enum 6 protocol message — may be how WhatsApp Web reliably fetches older history |
+| [Read-only mode](2026-04-06-read-only-mode.md) | Feature switches to disable action tools, allowing wabridge to run in read-only mode |
 | ~~[Media filename collision](2026-04-04-media-filename-collision.md)~~ | Done — on-disk filenames use message ID + extension, eliminating collisions |

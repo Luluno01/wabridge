@@ -4,8 +4,11 @@ WhatsApp-to-SQLite bridge with MCP tool interface.
 
 ## Using wabridge
 
+- [Getting Started](ops/GETTING_STARTED.md) -- first-run setup, pairing, initial sync
 - [MCP Tools](ops/MCP_TOOLS.md) -- tool catalog with parameters
+- [Cookbook](ops/COOKBOOK.md) -- common workflows and recipes
 - [REST API](ops/REST_API.md) -- HTTP endpoints for the bridge process
+- [Automation Safety](ops/AUTOMATION_SAFETY.md) -- rate limits, ban risk, session stability
 
 ## Documentation principles
 

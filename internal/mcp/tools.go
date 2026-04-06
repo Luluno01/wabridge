@@ -165,7 +165,7 @@ func (s *Server) registerListMessages() {
 	tool := mcplib.NewTool("list_messages",
 		mcplib.WithDescription("List messages with filtering options"),
 		mcplib.WithString("chat_jid", mcplib.Description("Filter by chat JID")),
-		mcplib.WithString("sender", mcplib.Description("Filter by sender JID (partial match)")),
+		mcplib.WithString("sender", mcplib.Description("Filter by sender JID (exact match)")),
 		mcplib.WithString("after", mcplib.Description("Only messages after this time (RFC3339)")),
 		mcplib.WithString("before", mcplib.Description("Only messages before this time (RFC3339)")),
 		mcplib.WithString("search", mcplib.Description("Search message content")),

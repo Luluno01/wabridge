@@ -7,7 +7,7 @@ WhatsApp MCP bridge — a single Go binary that connects to WhatsApp via [whatsm
 - Read chats, messages, and contacts from WhatsApp
 - Send text messages, files, and voice messages
 - Download media attachments
-- Search messages with full-text search
+- Search messages with substring search
 - @mention resolution (JIDs to display names)
 - Three operating modes: standalone, bridge+mcp, Docker
 
@@ -96,8 +96,11 @@ See [docs/README.md](docs/README.md) for the full index.
 
 | Topic | Document |
 |-------|----------|
+| Getting started | [docs/ops/GETTING_STARTED.md](docs/ops/GETTING_STARTED.md) |
+| MCP tools reference | [docs/ops/MCP_TOOLS.md](docs/ops/MCP_TOOLS.md) |
+| Cookbook | [docs/ops/COOKBOOK.md](docs/ops/COOKBOOK.md) |
+| Automation safety | [docs/ops/AUTOMATION_SAFETY.md](docs/ops/AUTOMATION_SAFETY.md) |
 | Architecture | [docs/dev/ARCHITECTURE.md](docs/dev/ARCHITECTURE.md) |
 | Database schema | [docs/dev/SCHEMA.md](docs/dev/SCHEMA.md) |
-| MCP tools reference | [docs/ops/MCP_TOOLS.md](docs/ops/MCP_TOOLS.md) |
 | REST API | [docs/ops/REST_API.md](docs/ops/REST_API.md) |
 | WhatsApp quirks | [docs/dev/WHATSAPP_QUIRKS.md](docs/dev/WHATSAPP_QUIRKS.md) |

@@ -142,7 +142,7 @@ Download media from a stored message.
 
 **Response:**
 ```json
-{"success": true, "data": {"path": "/data/media/1234567890_s.whatsapp.net/3EB0ABC123.jpg"}}
+{"success": true, "data": {"path": "/data/media/1234567890@s.whatsapp.net/3EB0ABC123.jpg"}}
 ```
 
 The filename is the WhatsApp message ID plus the file extension. The media directory path depends on configuration (`--media-dir` flag or `WABRIDGE_DATA_DIR`).
@@ -158,9 +158,20 @@ curl -X POST http://localhost:8080/api/download \
 
 ### POST /api/sync-history
 
-Request additional message history from the primary WhatsApp device. The response arrives asynchronously as history sync events.
+Request additional message history from the primary WhatsApp device for a specific chat. Uses the oldest stored message in the chat as the cursor. The response arrives asynchronously as history sync events.
 
-**Request:** empty body or `{}`.
+**Request body:**
+```json
+{
+  "chat_jid": "120363012345678901@g.us"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `chat_jid` | string | yes | JID of the chat to request older history for |
+
+Requires at least one stored message in the target chat to build a valid cursor.
 
 **Response:**
 ```json
@@ -170,5 +181,6 @@ Request additional message history from the primary WhatsApp device. The respons
 **Example:**
 ```bash
 curl -X POST http://localhost:8080/api/sync-history \
-  -H 'Content-Type: application/json'
+  -H 'Content-Type: application/json' \
+  -d '{"chat_jid": "120363012345678901@g.us"}'
 ```

@@ -90,7 +90,7 @@ type Backend interface {
     SendFile(ctx, recipient, filePath) error
     SendAudioMessage(ctx, recipient, filePath) error
     DownloadMedia(ctx, messageID, chatJID) (string, error)
-    RequestHistorySync(ctx) error
+    RequestHistorySync(ctx, chatJID) error
 }
 ```
 

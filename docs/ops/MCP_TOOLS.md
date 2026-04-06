@@ -68,7 +68,7 @@ List messages with filtering options. The primary query tool.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `chat_jid` | string | no | Filter by chat JID |
-| `sender` | string | no | Filter by sender JID (partial match) |
+| `sender` | string | no | Filter by sender JID (exact match) |
 | `after` | string | no | Only messages after this time (RFC 3339) |
 | `before` | string | no | Only messages before this time (RFC 3339) |
 | `search` | string | no | Search message content (substring match) |
