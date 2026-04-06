@@ -12,12 +12,12 @@ type Config struct {
 	HistorySync bool `json:"history_sync"`
 }
 
-// presets maps access level (0-3) to a Config.
-var presets = map[int]Config{
-	0: {Send: false, Download: false, HistorySync: false},
-	1: {Send: false, Download: true, HistorySync: false},
-	2: {Send: false, Download: true, HistorySync: true},
-	3: {Send: true, Download: true, HistorySync: true},
+// presets is a fixed-size array of access level (0-3) configs.
+var presets = [4]Config{
+	{Send: false, Download: false, HistorySync: false}, // 0: read-only
+	{Send: false, Download: true, HistorySync: false},  // 1: read + download
+	{Send: false, Download: true, HistorySync: true},   // 2: read + download + history sync
+	{Send: true, Download: true, HistorySync: true},    // 3: full access
 }
 
 // NewConfig builds a Config from an access level and an override string.
@@ -25,10 +25,10 @@ var presets = map[int]Config{
 // toggles applied on top of the level preset.
 // Valid feature names: send, download, history-sync.
 func NewConfig(level int, overrides string) (Config, error) {
-	cfg, ok := presets[level]
-	if !ok {
+	if level < 0 || level >= len(presets) {
 		return Config{}, fmt.Errorf("invalid access level %d (must be 0-3)", level)
 	}
+	cfg := presets[level]
 
 	if overrides == "" {
 		return cfg, nil
