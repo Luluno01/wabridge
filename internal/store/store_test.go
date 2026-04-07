@@ -417,6 +417,8 @@ func TestListMessages_ContextEdges(t *testing.T) {
 	assert.True(t, results[1].IsContext)
 	assert.Equal(t, "msg2", results[1].ID)
 	assert.False(t, results[2].IsContext)
+	assert.False(t, results[3].IsContext)
+	assert.False(t, results[4].IsContext)
 	assert.Equal(t, "msg6", results[5].ID)
 	assert.True(t, results[6].IsContext)
 	assert.Equal(t, "msg7", results[6].ID)
@@ -460,6 +462,36 @@ func TestListMessages_ContextEdges(t *testing.T) {
 	assert.True(t, results[0].IsContext)
 	assert.Equal(t, "msg0", results[0].ID)
 	assert.False(t, results[1].IsContext)
+
+	// context with latest=true — entire result in DESC order
+	after4 := base.Add(3 * time.Minute)
+	before4 := base.Add(6 * time.Minute)
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:       "chat@g.us",
+		After:         &after4,
+		Before:        &before4,
+		ContextBefore: 2,
+		ContextAfter:  2,
+		Latest:        true,
+		Limit:         10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 8) // 2 ctx_after (msg8,msg7) + 4 match (msg6..msg3) + 2 ctx_before (msg2,msg1)
+	// context_after in DESC (newest first)
+	assert.True(t, results[0].IsContext)
+	assert.Equal(t, "msg8", results[0].ID)
+	assert.True(t, results[1].IsContext)
+	assert.Equal(t, "msg7", results[1].ID)
+	// matched in DESC
+	assert.False(t, results[2].IsContext)
+	assert.Equal(t, "msg6", results[2].ID)
+	assert.False(t, results[5].IsContext)
+	assert.Equal(t, "msg3", results[5].ID)
+	// context_before in DESC (newest of the older first)
+	assert.True(t, results[6].IsContext)
+	assert.Equal(t, "msg2", results[6].ID)
+	assert.True(t, results[7].IsContext)
+	assert.Equal(t, "msg1", results[7].ID)
 }
 
 func TestGetMessageContext(t *testing.T) {

@@ -132,14 +132,20 @@ func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 		if err := q.Scan(&ctxBefore).Error; err != nil {
 			return nil, fmt.Errorf("context before: %w", err)
 		}
-		// Reverse to chronological order
-		for i, j := 0, len(ctxBefore)-1; i < j; i, j = i+1, j-1 {
-			ctxBefore[i], ctxBefore[j] = ctxBefore[j], ctxBefore[i]
+		// Only reverse to ASC when not using latest (DESC) ordering
+		if !opts.Latest {
+			for i, j := 0, len(ctxBefore)-1; i < j; i, j = i+1, j-1 {
+				ctxBefore[i], ctxBefore[j] = ctxBefore[j], ctxBefore[i]
+			}
 		}
 		for i := range ctxBefore {
 			ctxBefore[i].IsContext = true
 		}
-		results = append(ctxBefore, results...)
+		if opts.Latest {
+			results = append(results, ctxBefore...)  // append: older goes last in DESC
+		} else {
+			results = append(ctxBefore, results...)  // prepend: older goes first in ASC
+		}
 	}
 
 	// Context after: messages just after the Before boundary
@@ -156,10 +162,20 @@ func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 		if err := q.Scan(&ctxAfter).Error; err != nil {
 			return nil, fmt.Errorf("context after: %w", err)
 		}
+		// Reverse to DESC when using latest ordering
+		if opts.Latest {
+			for i, j := 0, len(ctxAfter)-1; i < j; i, j = i+1, j-1 {
+				ctxAfter[i], ctxAfter[j] = ctxAfter[j], ctxAfter[i]
+			}
+		}
 		for i := range ctxAfter {
 			ctxAfter[i].IsContext = true
 		}
-		results = append(results, ctxAfter...)
+		if opts.Latest {
+			results = append(ctxAfter, results...)  // prepend: newer goes first in DESC
+		} else {
+			results = append(results, ctxAfter...)  // append: newer goes last in ASC
+		}
 	}
 
 	return results, nil

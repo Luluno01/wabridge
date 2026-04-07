@@ -183,8 +183,8 @@ func (s *Server) registerListMessages() {
 		mcplib.WithNumber("page", mcplib.Description("Page number for pagination")),
 		mcplib.WithBoolean("raw", mcplib.Description("If true, skip mention resolution")),
 		mcplib.WithBoolean("latest", mcplib.Description("If true, return most recent messages first (default false)")),
-		mcplib.WithNumber("context_before", mcplib.Description("Messages to include before the time window (requires chat_jid and after)")),
-		mcplib.WithNumber("context_after", mcplib.Description("Messages to include after the time window (requires chat_jid and before)")),
+		mcplib.WithNumber("context_before", mcplib.Description("Messages to include before the time window (requires chat_jid; ignored without after)")),
+		mcplib.WithNumber("context_after", mcplib.Description("Messages to include after the time window (requires chat_jid; ignored without before)")),
 	)
 	s.mcp.AddTool(tool, func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 		opts := store.ListMessagesOpts{
