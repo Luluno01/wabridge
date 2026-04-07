@@ -183,6 +183,8 @@ func (s *Server) registerListMessages() {
 		mcplib.WithNumber("page", mcplib.Description("Page number for pagination")),
 		mcplib.WithBoolean("raw", mcplib.Description("If true, skip mention resolution")),
 		mcplib.WithBoolean("latest", mcplib.Description("If true, return most recent messages first (default false)")),
+		mcplib.WithNumber("context_before", mcplib.Description("Messages to include before the time window (requires chat_jid and after)")),
+		mcplib.WithNumber("context_after", mcplib.Description("Messages to include after the time window (requires chat_jid and before)")),
 	)
 	s.mcp.AddTool(tool, func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 		opts := store.ListMessagesOpts{
@@ -193,6 +195,20 @@ func (s *Server) registerListMessages() {
 			Page:    req.GetInt("page", 0),
 			Latest:  req.GetBool("latest", false),
 		}
+
+		contextBefore := req.GetInt("context_before", 0)
+		contextAfter := req.GetInt("context_after", 0)
+		if (contextBefore > 0 || contextAfter > 0) && opts.ChatJID == "" {
+			return nil, fmt.Errorf("context_before/context_after require chat_jid")
+		}
+		if contextBefore > 20 {
+			contextBefore = 20
+		}
+		if contextAfter > 20 {
+			contextAfter = 20
+		}
+		opts.ContextBefore = contextBefore
+		opts.ContextAfter = contextAfter
 
 		if afterStr := req.GetString("after", ""); afterStr != "" {
 			t, err := time.Parse(time.RFC3339, afterStr)
