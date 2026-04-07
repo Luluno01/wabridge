@@ -1,5 +1,6 @@
 services:
   bridge:
+    image: wabridge
     build: .
     command:
       - bridge
@@ -16,7 +17,7 @@ services:
       - wabridge-net
 
   mcp:
-    build: .
+    image: wabridge
     command:
       - mcp
       - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
@@ -35,7 +36,7 @@ services:
       - mcp
 
   standalone:
-    build: .
+    image: wabridge
     command:
       - standalone
       - --db=${WABRIDGE_DATA_DIR:?Set WABRIDGE_DATA_DIR in .env}/messages.db
