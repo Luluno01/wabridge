@@ -364,6 +364,102 @@ func TestListMessages_ContextEdges(t *testing.T) {
 	for _, r := range results {
 		assert.False(t, r.IsContext)
 	}
+
+	// context_before: 2 messages before the After boundary
+	after := base.Add(5 * time.Minute) // msg5 is first match
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:       "chat@g.us",
+		After:         &after,
+		ContextBefore: 2,
+		Limit:         10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 7) // 2 context (msg3,msg4) + 5 matched (msg5..msg9)
+	assert.True(t, results[0].IsContext)
+	assert.Equal(t, "msg3", results[0].ID)
+	assert.True(t, results[1].IsContext)
+	assert.Equal(t, "msg4", results[1].ID)
+	assert.False(t, results[2].IsContext)
+	assert.Equal(t, "msg5", results[2].ID)
+
+	// context_after: 2 messages after the Before boundary
+	before := base.Add(4 * time.Minute) // msg4 is last match
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:      "chat@g.us",
+		Before:       &before,
+		ContextAfter: 2,
+		Limit:        10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 7) // 5 matched (msg0..msg4) + 2 context (msg5,msg6)
+	assert.False(t, results[4].IsContext)
+	assert.Equal(t, "msg4", results[4].ID)
+	assert.True(t, results[5].IsContext)
+	assert.Equal(t, "msg5", results[5].ID)
+	assert.True(t, results[6].IsContext)
+	assert.Equal(t, "msg6", results[6].ID)
+
+	// Both context_before and context_after
+	after2 := base.Add(3 * time.Minute) // msg3 is first match
+	before2 := base.Add(6 * time.Minute) // msg6 is last match
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:       "chat@g.us",
+		After:         &after2,
+		Before:        &before2,
+		ContextBefore: 2,
+		ContextAfter:  2,
+		Limit:         10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 8) // 2 ctx (msg1,msg2) + 4 match (msg3..msg6) + 2 ctx (msg7,msg8)
+	assert.True(t, results[0].IsContext)
+	assert.Equal(t, "msg1", results[0].ID)
+	assert.True(t, results[1].IsContext)
+	assert.Equal(t, "msg2", results[1].ID)
+	assert.False(t, results[2].IsContext)
+	assert.Equal(t, "msg6", results[5].ID)
+	assert.True(t, results[6].IsContext)
+	assert.Equal(t, "msg7", results[6].ID)
+	assert.True(t, results[7].IsContext)
+	assert.Equal(t, "msg8", results[7].ID)
+
+	// context_before without After is a no-op
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:       "chat@g.us",
+		ContextBefore: 3,
+		Limit:         10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 10)
+	for _, r := range results {
+		assert.False(t, r.IsContext)
+	}
+
+	// context_after without Before is a no-op
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:      "chat@g.us",
+		ContextAfter: 3,
+		Limit:        10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 10)
+	for _, r := range results {
+		assert.False(t, r.IsContext)
+	}
+
+	// Fewer context messages available than requested
+	after3 := base.Add(1 * time.Minute) // msg1 is first match — only msg0 before it
+	results, err = s.ListMessages(ListMessagesOpts{
+		ChatJID:       "chat@g.us",
+		After:         &after3,
+		ContextBefore: 5,
+		Limit:         10,
+	})
+	require.NoError(t, err)
+	assert.Len(t, results, 10) // 1 context (msg0) + 9 matched (msg1..msg9)
+	assert.True(t, results[0].IsContext)
+	assert.Equal(t, "msg0", results[0].ID)
+	assert.False(t, results[1].IsContext)
 }
 
 func TestGetMessageContext(t *testing.T) {

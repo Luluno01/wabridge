@@ -114,7 +114,55 @@ func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 		query = query.Offset((opts.Page - 1) * limit)
 	}
 
-	return results, query.Scan(&results).Error
+	if err := query.Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	// Context before: messages just before the After boundary
+	if opts.ContextBefore > 0 && opts.After != nil && opts.ChatJID != "" {
+		n := opts.ContextBefore
+		if n > 20 {
+			n = 20
+		}
+		var ctxBefore []MessageResult
+		q := messageJoins(s.db.Table("messages").Select(messageSelect)).
+			Where("messages.chat_jid = ? AND messages.timestamp < ?", opts.ChatJID, *opts.After).
+			Order("messages.timestamp DESC").
+			Limit(n)
+		if err := q.Scan(&ctxBefore).Error; err != nil {
+			return nil, fmt.Errorf("context before: %w", err)
+		}
+		// Reverse to chronological order
+		for i, j := 0, len(ctxBefore)-1; i < j; i, j = i+1, j-1 {
+			ctxBefore[i], ctxBefore[j] = ctxBefore[j], ctxBefore[i]
+		}
+		for i := range ctxBefore {
+			ctxBefore[i].IsContext = true
+		}
+		results = append(ctxBefore, results...)
+	}
+
+	// Context after: messages just after the Before boundary
+	if opts.ContextAfter > 0 && opts.Before != nil && opts.ChatJID != "" {
+		n := opts.ContextAfter
+		if n > 20 {
+			n = 20
+		}
+		var ctxAfter []MessageResult
+		q := messageJoins(s.db.Table("messages").Select(messageSelect)).
+			Where("messages.chat_jid = ? AND messages.timestamp > ?", opts.ChatJID, *opts.Before).
+			Order("messages.timestamp ASC").
+			Limit(n)
+		if err := q.Scan(&ctxAfter).Error; err != nil {
+			return nil, fmt.Errorf("context after: %w", err)
+		}
+		for i := range ctxAfter {
+			ctxAfter[i].IsContext = true
+		}
+		results = append(results, ctxAfter...)
+	}
+
+	return results, nil
 }
 
 func (s *Store) GetOldestMessage(chatJID string) (*Message, error) {
