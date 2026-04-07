@@ -9,20 +9,23 @@ import (
 )
 
 type ListMessagesOpts struct {
-	ChatJID string
-	Sender  string
-	After   *time.Time
-	Before  *time.Time
-	Search  string
-	Limit   int
-	Page    int
-	Latest  bool // if true, return most recent messages first
+	ChatJID       string
+	Sender        string
+	After         *time.Time
+	Before        *time.Time
+	Search        string
+	Limit         int
+	Page          int
+	Latest        bool // if true, return most recent messages first
+	ContextBefore int  // messages before the After boundary (edge extension)
+	ContextAfter  int  // messages after the Before boundary (edge extension)
 }
 
 type MessageResult struct {
 	Message
 	ChatName   string `json:"chat_name"`
 	SenderName string `json:"sender_name"`
+	IsContext  bool   `json:"is_context,omitempty"`
 }
 
 func (s *Store) StoreMessage(msg *Message) error {

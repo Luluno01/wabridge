@@ -344,6 +344,28 @@ func TestListMessages_IncludesQuotedFields(t *testing.T) {
 	assert.Equal(t, "What do you think?", *results[1].QuotedContent)
 }
 
+func TestListMessages_ContextEdges(t *testing.T) {
+	s := newTestStore(t)
+	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+
+	for i := 0; i < 10; i++ {
+		s.StoreMessage(&Message{
+			ID:        fmt.Sprintf("msg%d", i),
+			ChatJID:   "chat@g.us",
+			Sender:    "alice@s.whatsapp.net",
+			Content:   fmt.Sprintf("Message %d", i),
+			Timestamp: base.Add(time.Duration(i) * time.Minute),
+		})
+	}
+
+	// Without context params, IsContext should be false on all results
+	results, err := s.ListMessages(ListMessagesOpts{ChatJID: "chat@g.us", Limit: 10})
+	require.NoError(t, err)
+	for _, r := range results {
+		assert.False(t, r.IsContext)
+	}
+}
+
 func TestGetMessageContext(t *testing.T) {
 	s := newTestStore(t)
 	base := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
