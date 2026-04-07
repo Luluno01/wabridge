@@ -13,4 +13,4 @@ Feature ideas and improvements for future implementation.
 | [FULL_HISTORY_SYNC_ON_DEMAND](2026-04-06-full-history-sync-on-demand.md) | Investigate enum 6 protocol message — may be how WhatsApp Web reliably fetches older history |
 | ~~[Read-only mode](2026-04-06-read-only-mode.md)~~ | Done — tiered access levels (0-3) with `--access-level` and `--features` flags |
 | ~~[Media filename collision](2026-04-04-media-filename-collision.md)~~ | Done — on-disk filenames use message ID + extension, eliminating collisions |
-| [Inline context params](2026-04-07-inline-context-params.md) | `context_before` / `context_after` on `list_messages` to return surrounding messages inline, avoiding per-message `get_message_context` round trips |
+| ~~[Inline context params](2026-04-07-inline-context-params.md)~~ | Done — `context_before` / `context_after` on `list_messages` return edge messages marked with `is_context: true` |

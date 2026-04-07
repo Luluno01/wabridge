@@ -93,8 +93,10 @@ List messages with filtering options. The primary query tool.
 | `page` | number | no | Page number for pagination |
 | `raw` | boolean | no | If true, skip mention resolution |
 | `latest` | boolean | no | If true, return most recent messages first (default false) |
+| `context_before` | number | no | Messages to include before the `after` boundary (max 20, requires `chat_jid`) |
+| `context_after` | number | no | Messages to include after the `before` boundary (max 20, requires `chat_jid`) |
 
-Returns: array of message objects with `chat_name` and `sender_name` resolved. Reply messages include `quoted_message_id`, `quoted_sender`, `quoted_content`, and optionally `quoted_media_type` — see [SCHEMA.md](../dev/SCHEMA.md) for details.
+Returns: array of message objects with `chat_name` and `sender_name` resolved. When `context_before` or `context_after` is used, edge messages include `"is_context": true`. Reply messages include `quoted_message_id`, `quoted_sender`, `quoted_content`, and optionally `quoted_media_type` — see [SCHEMA.md](../dev/SCHEMA.md) for details.
 
 ### get_last_interaction
 
