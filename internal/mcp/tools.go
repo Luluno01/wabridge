@@ -179,7 +179,7 @@ func (s *Server) registerListMessages() {
 		mcplib.WithString("after", mcplib.Description("Only messages after this time (RFC3339)")),
 		mcplib.WithString("before", mcplib.Description("Only messages before this time (RFC3339)")),
 		mcplib.WithString("search", mcplib.Description("Search message content")),
-		mcplib.WithNumber("limit", mcplib.Description("Maximum number of results (default 50)")),
+		mcplib.WithNumber("limit", mcplib.Description("Maximum in-window messages returned, excluding context rows (default 50)")),
 		mcplib.WithNumber("page", mcplib.Description("Page number for pagination")),
 		mcplib.WithBoolean("raw", mcplib.Description("If true, skip mention resolution")),
 		mcplib.WithBoolean("latest", mcplib.Description("If true, return most recent messages first (default false)")),

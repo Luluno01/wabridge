@@ -89,7 +89,7 @@ List messages with filtering options. The primary query tool.
 | `after` | string | no | Only messages after this time (RFC 3339) |
 | `before` | string | no | Only messages before this time (RFC 3339) |
 | `search` | string | no | Search message content (substring match) |
-| `limit` | number | no | Maximum results (default 50) |
+| `limit` | number | no | Maximum in-window messages returned (default 50). Context rows from `context_before`/`context_after` are added on top of this limit. |
 | `page` | number | no | Page number for pagination |
 | `raw` | boolean | no | If true, skip mention resolution |
 | `latest` | boolean | no | If true, return most recent messages first (default false) |
