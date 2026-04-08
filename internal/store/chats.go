@@ -34,7 +34,7 @@ type ChatResult struct {
 	DisplayName string `json:"display_name"`
 }
 
-func (s *Store) ListChats(filter string, limit int) ([]ChatResult, error) {
+func (s *Store) ListChats(filter string, limit, page int) ([]ChatResult, error) {
 	var results []ChatResult
 
 	query := s.db.Table("chats").
@@ -50,9 +50,7 @@ func (s *Store) ListChats(filter string, limit int) ([]ChatResult, error) {
 		)
 	}
 
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
+	query = paginate(query, limit, page, 20)
 
 	return results, query.Scan(&results).Error
 }

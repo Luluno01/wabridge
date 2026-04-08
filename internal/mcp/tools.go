@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"wabridge/internal/mention"
@@ -38,6 +39,43 @@ func (s *Server) resolveMessages(messages []store.MessageResult, raw bool) {
 			s.store.GetContactName,
 		)
 	}
+}
+
+// resolveChatName resolves a display name to a single chat JID.
+// It prefers an exact (case-insensitive) match when multiple chats match.
+func (s *Server) resolveChatName(name string) (string, error) {
+	chats, err := s.store.ListChats(name, 100, 0)
+	if err != nil {
+		return "", fmt.Errorf("resolve chat name: %w", err)
+	}
+	if len(chats) == 0 {
+		return "", fmt.Errorf("no chat found matching %q", name)
+	}
+	if len(chats) == 1 {
+		return chats[0].JID, nil
+	}
+
+	// Multiple matches — prefer exact display name match
+	var exact []store.ChatResult
+	for _, c := range chats {
+		if strings.EqualFold(c.DisplayName, name) {
+			exact = append(exact, c)
+		}
+	}
+	if len(exact) == 1 {
+		return exact[0].JID, nil
+	}
+
+	// Still ambiguous — show exact duplicates when available, otherwise all matches
+	candidates := chats
+	if len(exact) > 1 {
+		candidates = exact
+	}
+	lines := make([]string, len(candidates))
+	for i, c := range candidates {
+		lines[i] = fmt.Sprintf("  %s (%s)", c.DisplayName, c.JID)
+	}
+	return "", fmt.Errorf("multiple chats match %q — use chat_jid to be specific:\n%s", name, strings.Join(lines, "\n"))
 }
 
 // registerTools registers MCP tools on the server.
@@ -94,13 +132,15 @@ func (s *Server) registerListChats() {
 	tool := mcplib.NewTool("list_chats",
 		mcplib.WithDescription("List chats, optionally filtered by name or JID"),
 		mcplib.WithString("filter", mcplib.Description("Filter chats by name or JID")),
-		mcplib.WithNumber("limit", mcplib.Description("Maximum number of results")),
+		mcplib.WithNumber("limit", mcplib.Description("Maximum number of results (default 20)")),
+		mcplib.WithNumber("page", mcplib.Description("Page number for pagination")),
 	)
 	s.mcp.AddTool(tool, func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 		filter := req.GetString("filter", "")
 		limit := req.GetInt("limit", 0)
+		page := req.GetInt("page", 0)
 
-		chats, err := s.store.ListChats(filter, limit)
+		chats, err := s.store.ListChats(filter, limit, page)
 		if err != nil {
 			return nil, fmt.Errorf("list chats: %w", err)
 		}
@@ -174,7 +214,8 @@ func (s *Server) registerGetContactChats() {
 func (s *Server) registerListMessages() {
 	tool := mcplib.NewTool("list_messages",
 		mcplib.WithDescription("List messages with filtering options"),
-		mcplib.WithString("chat_jid", mcplib.Description("Filter by chat JID")),
+		mcplib.WithString("chat_jid", mcplib.Description("Filter by chat JID (mutually exclusive with chat_name)")),
+		mcplib.WithString("chat_name", mcplib.Description("Filter by chat display name — resolved to JID automatically (mutually exclusive with chat_jid)")),
 		mcplib.WithString("sender", mcplib.Description("Filter by sender JID (exact match)")),
 		mcplib.WithString("after", mcplib.Description("Only messages after this time (RFC3339)")),
 		mcplib.WithString("before", mcplib.Description("Only messages before this time (RFC3339)")),
@@ -183,15 +224,28 @@ func (s *Server) registerListMessages() {
 		mcplib.WithNumber("page", mcplib.Description("Page number for pagination")),
 		mcplib.WithBoolean("raw", mcplib.Description("If true, skip mention resolution")),
 		mcplib.WithBoolean("latest", mcplib.Description("If true, return most recent messages first (default false)")),
-		mcplib.WithNumber("context_before", mcplib.Description("Messages to include before the time window (requires chat_jid; ignored without after)")),
-		mcplib.WithNumber("context_after", mcplib.Description("Messages to include after the time window (requires chat_jid; ignored without before)")),
+		mcplib.WithNumber("context_before", mcplib.Description("Messages to include before the time window (requires chat_jid/chat_name; ignored without after)")),
+		mcplib.WithNumber("context_after", mcplib.Description("Messages to include after the time window (requires chat_jid/chat_name; ignored without before)")),
 	)
 	s.mcp.AddTool(tool, func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
+		chatJID := req.GetString("chat_jid", "")
+		chatName := req.GetString("chat_name", "")
+		if chatJID != "" && chatName != "" {
+			return nil, fmt.Errorf("chat_jid and chat_name are mutually exclusive")
+		}
+		if chatName != "" {
+			resolved, err := s.resolveChatName(chatName)
+			if err != nil {
+				return nil, err
+			}
+			chatJID = resolved
+		}
+
 		opts := store.ListMessagesOpts{
-			ChatJID: req.GetString("chat_jid", ""),
+			ChatJID: chatJID,
 			Sender:  req.GetString("sender", ""),
 			Search:  req.GetString("search", ""),
-			Limit:   req.GetInt("limit", 50),
+			Limit:   req.GetInt("limit", 0),
 			Page:    req.GetInt("page", 0),
 			Latest:  req.GetBool("latest", false),
 		}
@@ -199,7 +253,7 @@ func (s *Server) registerListMessages() {
 		contextBefore := req.GetInt("context_before", 0)
 		contextAfter := req.GetInt("context_after", 0)
 		if (contextBefore > 0 || contextAfter > 0) && opts.ChatJID == "" {
-			return nil, fmt.Errorf("context_before/context_after require chat_jid")
+			return nil, fmt.Errorf("context_before/context_after require chat_jid or chat_name")
 		}
 		if contextBefore > 20 {
 			contextBefore = 20

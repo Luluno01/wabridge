@@ -57,15 +57,63 @@ func TestListChats(t *testing.T) {
 	s.UpsertChat("b@g.us", strPtr("Beta"), now.Add(time.Hour))
 	s.UpsertChat("c@s.whatsapp.net", nil, now.Add(2*time.Hour))
 
-	chats, err := s.ListChats("", 10)
+	chats, err := s.ListChats("", 10, 0)
 	require.NoError(t, err)
 	assert.Len(t, chats, 3)
 	assert.Equal(t, "c@s.whatsapp.net", chats[0].JID) // most recent first
 
-	chats, err = s.ListChats("alpha", 10)
+	chats, err = s.ListChats("alpha", 10, 0)
 	require.NoError(t, err)
 	assert.Len(t, chats, 1)
 	assert.Equal(t, "a@g.us", chats[0].JID)
+}
+
+func TestListChats_Pagination(t *testing.T) {
+	s := newTestStore(t)
+	now := time.Now().Truncate(time.Second)
+
+	for i := 0; i < 5; i++ {
+		s.UpsertChat(fmt.Sprintf("chat%d@g.us", i), strPtr(fmt.Sprintf("Chat %d", i)), now.Add(time.Duration(i)*time.Hour))
+	}
+
+	// Page 1, limit 2 — most recent first
+	chats, err := s.ListChats("", 2, 1)
+	require.NoError(t, err)
+	assert.Len(t, chats, 2)
+	assert.Equal(t, "chat4@g.us", chats[0].JID)
+	assert.Equal(t, "chat3@g.us", chats[1].JID)
+
+	// Page 2
+	chats, err = s.ListChats("", 2, 2)
+	require.NoError(t, err)
+	assert.Len(t, chats, 2)
+	assert.Equal(t, "chat2@g.us", chats[0].JID)
+	assert.Equal(t, "chat1@g.us", chats[1].JID)
+
+	// Page 3 — only 1 remaining
+	chats, err = s.ListChats("", 2, 3)
+	require.NoError(t, err)
+	assert.Len(t, chats, 1)
+	assert.Equal(t, "chat0@g.us", chats[0].JID)
+}
+
+func TestListChats_DefaultLimit(t *testing.T) {
+	s := newTestStore(t)
+	now := time.Now().Truncate(time.Second)
+
+	for i := 0; i < 25; i++ {
+		s.UpsertChat(fmt.Sprintf("chat%02d@g.us", i), strPtr(fmt.Sprintf("Chat %02d", i)), now.Add(time.Duration(i)*time.Hour))
+	}
+
+	// No explicit limit defaults to 20
+	chats, err := s.ListChats("", 0, 0)
+	require.NoError(t, err)
+	assert.Len(t, chats, 20)
+
+	// Page 2 gets the remaining 5
+	chats, err = s.ListChats("", 0, 2)
+	require.NoError(t, err)
+	assert.Len(t, chats, 5)
 }
 
 func TestGetChat_NotFound(t *testing.T) {

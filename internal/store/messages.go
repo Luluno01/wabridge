@@ -104,15 +104,7 @@ func (s *Store) ListMessages(opts ListMessagesOpts) ([]MessageResult, error) {
 		query = query.Order("messages.timestamp ASC")
 	}
 
-	limit := opts.Limit
-	if limit <= 0 {
-		limit = 50
-	}
-	query = query.Limit(limit)
-
-	if opts.Page > 1 {
-		query = query.Offset((opts.Page - 1) * limit)
-	}
+	query = paginate(query, opts.Limit, opts.Page, 50)
 
 	if err := query.Scan(&results).Error; err != nil {
 		return nil, err

@@ -25,6 +25,19 @@ func New(dsn string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
+// paginate applies limit and offset to a GORM query.
+// Limit defaults to defaultLimit when <= 0. Page is 1-indexed.
+func paginate(q *gorm.DB, limit, page, defaultLimit int) *gorm.DB {
+	if limit <= 0 {
+		limit = defaultLimit
+	}
+	q = q.Limit(limit)
+	if page > 1 {
+		q = q.Offset((page - 1) * limit)
+	}
+	return q
+}
+
 func (s *Store) Close() error {
 	sqlDB, err := s.db.DB()
 	if err != nil {

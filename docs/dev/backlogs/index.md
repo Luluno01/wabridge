@@ -14,4 +14,5 @@ Feature ideas and improvements for future implementation.
 | ~~[Read-only mode](2026-04-06-read-only-mode.md)~~ | Done — tiered access levels (0-3) with `--access-level` and `--features` flags |
 | ~~[Media filename collision](2026-04-04-media-filename-collision.md)~~ | Done — on-disk filenames use message ID + extension, eliminating collisions |
 | ~~[Inline context params](2026-04-07-inline-context-params.md)~~ | Done — `context_before` / `context_after` on `list_messages` return edge messages marked with `is_context: true` |
-| [Chat name resolution](2026-04-08-chat-name-resolution.md) | Let `list_messages` accept chat display names; add search/pagination to `list_chats` so consumers don't manually scan the full list |
+| ~~[Chat name resolution](2026-04-08-chat-name-resolution.md)~~ | Done — `list_messages` accepts `chat_name` with auto-resolution to JID; `list_chats` supports `page` pagination |
+| [list_chats search](2026-04-09-list-chats-search.md) | Dedicated `search` parameter on `list_chats` that matches only on display name, not JID |

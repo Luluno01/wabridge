@@ -43,7 +43,8 @@ List chats, optionally filtered by name or JID.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `filter` | string | no | Filter chats by name or JID |
-| `limit` | number | no | Maximum results (0 = unlimited) |
+| `limit` | number | no | Maximum results (default 20) |
+| `page` | number | no | Page number for pagination |
 
 Returns: array of chat objects with `display_name` resolved via contact lookup.
 
@@ -84,7 +85,8 @@ List messages with filtering options. The primary query tool.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `chat_jid` | string | no | Filter by chat JID |
+| `chat_jid` | string | no | Filter by chat JID (mutually exclusive with `chat_name`) |
+| `chat_name` | string | no | Filter by chat display name — resolved to JID automatically (mutually exclusive with `chat_jid`). If multiple chats match, an exact display-name match is preferred; otherwise an error lists the candidates. |
 | `sender` | string | no | Filter by sender JID (exact match) |
 | `after` | string | no | Only messages after this time (RFC 3339) |
 | `before` | string | no | Only messages before this time (RFC 3339) |
@@ -93,8 +95,8 @@ List messages with filtering options. The primary query tool.
 | `page` | number | no | Page number for pagination |
 | `raw` | boolean | no | If true, skip mention resolution |
 | `latest` | boolean | no | If true, return most recent messages first (default false) |
-| `context_before` | number | no | Messages to include before the `after` boundary (max 20, requires `chat_jid`) |
-| `context_after` | number | no | Messages to include after the `before` boundary (max 20, requires `chat_jid`) |
+| `context_before` | number | no | Messages to include before the `after` boundary (max 20, requires `chat_jid` or `chat_name`) |
+| `context_after` | number | no | Messages to include after the `before` boundary (max 20, requires `chat_jid` or `chat_name`) |
 
 Returns: array of message objects with `chat_name` and `sender_name` resolved. When `context_before` or `context_after` is used, edge messages include `"is_context": true`. Reply messages include `quoted_message_id`, `quoted_sender`, `quoted_content`, and optionally `quoted_media_type` — see [SCHEMA.md](../dev/SCHEMA.md) for details.
 
