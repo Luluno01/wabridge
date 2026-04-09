@@ -159,15 +159,15 @@ mkdir -p "$WABRIDGE_DATA_DIR"
 ### 2. Start the bridge
 
 ```bash
-docker compose up bridge
-```
-
-**Keep `-d` off for first run** so you can see the QR code in the terminal output. Scan it with your phone (same flow as above).
-
-After pairing succeeds, you can restart in detached mode:
-```bash
 docker compose up -d bridge
 ```
+
+On first run, view the QR code in the logs:
+```bash
+docker compose logs bridge
+```
+
+Scan it with your phone (same flow as above).
 
 On subsequent runs, the bridge reconnects automatically using the saved session — no QR code needed.
 

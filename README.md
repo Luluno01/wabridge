@@ -79,7 +79,7 @@ cp .env.example .env
 # Edit .env: set WABRIDGE_DATA_DIR, WABRIDGE_UID, WABRIDGE_GID
 mkdir -p "$WABRIDGE_DATA_DIR"  # must exist before first run
 
-# Start bridge
+# Start bridge (on first run, check logs for QR code: docker compose logs bridge)
 docker compose up -d bridge
 
 # Configure MCP client

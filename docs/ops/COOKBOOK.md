@@ -12,17 +12,13 @@ Get a summary of messages from the last 24 hours.
 list_messages(after: "2026-04-05T00:00:00Z", latest: true, limit: 100)
 ```
 
-**Step 2:** Or scope to a specific chat — find the chat JID first:
+**Step 2:** Or scope to a specific chat by name:
 
 ```
-list_chats(filter: "Project Team")
+list_messages(chat_name: "Project Team", after: "2026-04-05T00:00:00Z")
 ```
 
-Then list messages from that chat:
-
-```
-list_messages(chat_jid: "120363012345678901@g.us", after: "2026-04-05T00:00:00Z")
-```
+`chat_name` resolves the display name to a JID automatically. If multiple chats match, it prefers an exact name match; otherwise it returns the candidates so you can use `chat_jid` instead.
 
 **Tip:** Use `latest: true` to get the most recent messages first, which is usually what you want for a briefing.
 
