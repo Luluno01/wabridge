@@ -1,6 +1,6 @@
 # WhatsApp Quirks
 
-Practical notes on working with WhatsApp via whatsmeow. Distilled from building wabridge. For data model details, see [SCHEMA.md](SCHEMA.md). For architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
+Practical notes on working with WhatsApp via whatsmeow. Distilled from building wabridge. For data model details, see [SCHEMA.md](SCHEMA.md). For architecture, see [ARCHITECTURE.md](ARCHITECTURE.md). For the 2026-07 investigation of app-state, keepalive, websocket, and notification warnings, see [Whatsmeow Runtime Warning Investigation](WHATSMEOW_RUNTIME_WARNINGS.md).
 
 ## JID Formats
 
